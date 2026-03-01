@@ -1,0 +1,74 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cortexcode"
+version = "0.2.0"
+description = "Lightweight code indexing for AI assistants — save 90%+ tokens with structured context"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "MIT"}
+authors = [
+    {name = "CortexCode", email = "dev@cortexcode.io"}
+]
+keywords = ["code-index", "ast", "copilot", "cursor", "rag", "ai-assistant", "tree-sitter", "code-analysis", "token-savings", "context-provider"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Documentation",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Text Processing :: Indexing",
+]
+dependencies = [
+    "tree-sitter>=0.21.0",
+    "tree-sitter-python>=0.23.0",
+    "tree-sitter-javascript>=0.23.0",
+    "tree-sitter-typescript>=0.23.0",
+    "tree-sitter-go>=0.23.0",
+    "tree-sitter-rust>=0.23.0",
+    "tree-sitter-java>=0.23.0",
+    "tree-sitter-c-sharp>=0.23.0",
+    "click>=8.1.0",
+    "watchdog>=4.0.0",
+    "rich>=13.0.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/cortexcode/cortexcode"
+Repository = "https://github.com/cortexcode/cortexcode"
+Documentation = "https://github.com/cortexcode/cortexcode#readme"
+Issues = "https://github.com/cortexcode/cortexcode/issues"
+Changelog = "https://github.com/cortexcode/cortexcode/blob/main/CHANGELOG.md"
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-cov>=4.1.0",
+    "ruff>=0.3.0",
+]
+ai = [
+    "tiktoken>=0.7.0",
+]
+mobile = [
+    "tree-sitter-kotlin>=0.1.0",
+    "tree-sitter-swift>=0.6.0",
+]
+
+[project.scripts]
+cortexcode = "cortexcode.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["cortexcode*"]
+
+[tool.ruff]
+target-version = "py310"
+line-length = 100
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

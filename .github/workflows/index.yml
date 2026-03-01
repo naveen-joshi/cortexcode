@@ -1,0 +1,52 @@
+# CortexCode — Auto-index on push
+# Add this to your project's .github/workflows/ to auto-index on every push.
+#
+# Usage:
+#   1. Copy this file to your repo's .github/workflows/cortexcode.yml
+#   2. Push to trigger indexing
+#   3. The index is uploaded as an artifact and optionally committed
+
+name: CortexCode Index
+
+on:
+  push:
+    branches: [main, master, develop]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  index:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install CortexCode
+        run: pip install cortexcode
+
+      - name: Index codebase
+        run: cortexcode index .
+
+      - name: Show stats
+        run: cortexcode stats
+
+      - name: Upload index artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: cortexcode-index
+          path: .cortexcode/index.json
+          retention-days: 30
+
+      # Optional: commit the index back to the repo
+      # Uncomment the following to auto-commit the index
+      # - name: Commit index
+      #   run: |
+      #     git config user.name "CortexCode Bot"
+      #     git config user.email "bot@cortexcode.io"
+      #     git add .cortexcode/index.json
+      #     git diff --cached --quiet || git commit -m "chore: update cortexcode index"
+      #     git push

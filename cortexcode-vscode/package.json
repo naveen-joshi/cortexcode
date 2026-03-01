@@ -1,0 +1,130 @@
+{
+  "name": "cortexcode-vscode",
+  "displayName": "CortexCode - AI Code Index",
+  "description": "Lightweight code indexing for AI assistants. Use @cortexcode in Copilot Chat to search symbols, analyze impact, find dead code, and get code context. Works with VS Code, Windsurf, and Cursor.",
+  "version": "0.4.0",
+  "publisher": "cortexcode",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/cortexcode/cortexcode"
+  },
+  "homepage": "https://github.com/cortexcode/cortexcode#readme",
+  "bugs": {
+    "url": "https://github.com/cortexcode/cortexcode/issues"
+  },
+  "keywords": [
+    "cortexcode",
+    "code-index",
+    "ast",
+    "ai-assistant",
+    "copilot",
+    "cursor",
+    "windsurf",
+    "context",
+    "call-graph",
+    "documentation",
+    "symbol-search",
+    "dead-code",
+    "complexity"
+  ],
+  "engines": {
+    "vscode": "^1.93.0"
+  },
+  "categories": [
+    "Other",
+    "Programming Languages",
+    "Linters"
+  ],
+  "activationEvents": [
+    "onStartup",
+    "workspaceContains:**/.cortexcode/index.json",
+    "onLanguage:javascript",
+    "onLanguage:typescript",
+    "onLanguage:python",
+    "onLanguage:javascriptreact",
+    "onLanguage:typescriptreact"
+  ],
+  "icon": "icon.png",
+  "main": "./src/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "cortexcode.getContext",
+        "title": "CortexCode: Get Context",
+        "description": "Get relevant code context for AI assistants"
+      },
+      {
+        "command": "cortexcode.index",
+        "title": "CortexCode: Index Project",
+        "description": "Index the current project"
+      },
+      {
+        "command": "cortexcode.docs",
+        "title": "CortexCode: Generate Docs",
+        "description": "Generate project documentation"
+      },
+      {
+        "command": "cortexcode.showSymbols",
+        "title": "CortexCode: Show All Symbols",
+        "description": "Show all indexed symbols"
+      }
+    ],
+    "chatParticipants": [
+      {
+        "id": "cortexcode.chat",
+        "name": "cortexcode",
+        "fullName": "CortexCode",
+        "description": "Ask questions about your codebase using the CortexCode index. Use /search, /context, /impact, /deadcode, /complexity commands.",
+        "isSticky": true,
+        "commands": [
+          {
+            "name": "context",
+            "description": "Get relevant code context for a query"
+          },
+          {
+            "name": "impact",
+            "description": "Analyze change impact of a symbol"
+          },
+          {
+            "name": "deadcode",
+            "description": "Find potentially unused symbols"
+          },
+          {
+            "name": "complexity",
+            "description": "Show most complex functions"
+          },
+          {
+            "name": "search",
+            "description": "Search symbols by name"
+          }
+        ]
+      }
+    ],
+    "configuration": {
+      "title": "CortexCode",
+      "properties": {
+        "cortexcode.indexOnOpen": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically index project when opened"
+        },
+        "cortexcode.autoWatch": {
+          "type": "boolean",
+          "default": true,
+          "description": "Auto-reindex on file changes"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.93.0",
+    "@types/node": "^18.0.0",
+    "typescript": "^5.0.0"
+  }
+}
