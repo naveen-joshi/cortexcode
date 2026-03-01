@@ -420,6 +420,31 @@ CortexCode respects `.gitignore` files (including nested ones) and has built-in 
 - [x] Django / Flask framework detection
 - [x] VS Code Marketplace publishing
 
+### Future Improvements
+
+#### Features
+- [ ] More language support (Ruby, PHP, C++)
+- [ ] Cloud index for team sharing
+- [ ] Graph visualization for call chains
+- [ ] Auto-indexing on git push
+- [ ] Index versioning (compare across commits)
+- [ ] Config file (`.cortexcode.yaml`) for project settings
+
+#### Integrations
+- [ ] JetBrains IDEs plugin (IntelliJ, PyCharm)
+- [ ] GitHub Copilot native integration
+- [ ] Claude Code integration
+
+#### AI/Search
+- [ ] Semantic embeddings for meaning-based search
+- [ ] AI-powered code review
+- [ ] Bug detection (pattern matching)
+
+#### Performance
+- [ ] Compressed index format
+- [ ] Faster search with caching
+- [ ] Parallel multi-threaded indexing
+
 ## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
