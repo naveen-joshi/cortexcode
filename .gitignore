@@ -34,6 +34,7 @@ env/
 
 # CortexCode
 .cortexcode/
+!.cortexcode/prompt.md
 *.egg-info/
 
 # Testing

@@ -181,6 +181,42 @@ npm install && npm run compile
 
 ## How AI Agents Use This
 
+### Windsurf / Cursor Configuration
+
+To make AI agents in Windsurf or Cursor automatically use CortexCode:
+
+**Option 1: Auto-detect prompt file**
+
+Create `.cortexcode/prompt.md` in your project root. AI agents will automatically read this file and use the CortexCode index for code understanding.
+
+**Option 2: Add to agent rules**
+
+Add to your project's `.windsurf/rules.md` or Cursor rules:
+
+```
+Always use CortexCode index (.cortexcode/index.json) to understand the codebase before making changes. Use:
+- cortexcode search <symbol> to find symbols
+- cortexcode impact <symbol> to see what uses a function
+- cortexcode context <query> to get relevant code context
+
+Run 'cortexcode index' first if the index doesn't exist.
+```
+
+**Option 3: Configure MCP in Windsurf**
+
+Add to `~/.windsurf/config.json`:
+
+```json
+{
+  "mcpServers": {
+    "cortexcode": {
+      "command": "cortexcode",
+      "args": ["mcp"]
+    }
+  }
+}
+```
+
 ### 1. Context Command (simplest)
 
 ```bash
