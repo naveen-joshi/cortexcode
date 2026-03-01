@@ -4,13 +4,13 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "cortexcode"
-version = "0.2.1"
+version = "0.2.2"
 description = "Lightweight code indexing for AI assistants — save 90%+ tokens with structured context"
 readme = "README.md"
 requires-python = ">=3.10"
 license = {text = "MIT"}
 authors = [
-    {name = "CortexCode", email = "dev@cortexcode.io"}
+    {name = "Naveen", email = "naveen_joshi07@outlook.com"}
 ]
 keywords = ["code-index", "ast", "copilot", "cursor", "rag", "ai-assistant", "tree-sitter", "code-analysis", "token-savings", "context-provider"]
 classifiers = [
