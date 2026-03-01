@@ -39,11 +39,12 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/cortexcode/cortexcode"
-Repository = "https://github.com/cortexcode/cortexcode"
-Documentation = "https://github.com/cortexcode/cortexcode#readme"
-Issues = "https://github.com/cortexcode/cortexcode/issues"
-Changelog = "https://github.com/cortexcode/cortexcode/blob/main/CHANGELOG.md"
+Homepage = "https://github.com/naveen-joshi/cortexcode"
+Repository = "https://github.com/naveen-joshi/cortexcode"
+Documentation = "https://github.com/naveen-joshi/cortexcode#readme"
+Issues = "https://github.com/naveen-joshi/cortexcode/issues"
+Changelog = "https://github.com/naveen-joshi/cortexcode/blob/main/CHANGELOG.md"
+VSCodeMarketplace = "https://marketplace.visualstudio.com/items?itemName=cortexcode.cortexcode-vscode"
 
 [project.optional-dependencies]
 dev = [

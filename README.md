@@ -9,8 +9,9 @@
 <p align="center">
   <a href="https://pypi.org/project/cortexcode/"><img src="https://img.shields.io/pypi/v/cortexcode?style=flat-square&color=blue" alt="PyPI"></a>
   <a href="https://pypi.org/project/cortexcode/"><img src="https://img.shields.io/pypi/pyversions/cortexcode?style=flat-square" alt="Python"></a>
-  <a href="https://github.com/cortexcode/cortexcode/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-green?style=flat-square" alt="License"></a>
-  <a href="https://github.com/cortexcode/cortexcode"><img src="https://img.shields.io/github/stars/cortexcode/cortexcode?style=flat-square" alt="Stars"></a>
+  <a href="https://github.com/naveen-joshi/cortexcode/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-green?style=flat-square" alt="License"></a>
+  <a href="https://github.com/naveen-joshi/cortexcode"><img src="https://img.shields.io/github/stars/naveen-joshi/cortexcode?style=flat-square" alt="Stars"></a>
+  <a href="https://marketplace.visualstudio.com/items?itemName=cortexcode.cortexcode-vscode"><img src="https://img.shields.io/visual-studio-marketplace/v/cortexcode.cortexcode-vscode?style=flat-square" alt="VS Code"></a>
 </p>
 
 ---
@@ -379,8 +380,7 @@ CortexCode respects `.gitignore` files (including nested ones) and has built-in 
 - [x] Native Android (Kotlin/Java) framework detection
 - [x] Native iOS (Swift/SwiftUI/UIKit) framework detection
 - [x] Django / Flask framework detection
-- [ ] VS Code Marketplace publishing
-- [ ] OpenAI embedding-based semantic search
+- [x] VS Code Marketplace publishing
 
 ## Contributing
 
