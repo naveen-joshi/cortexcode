@@ -135,6 +135,8 @@ cortexcode index -i    # Skip unchanged files
 
 ### VS Code Extension
 
+Install from: [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=cortexcode.cortexcode-vscode)
+
 The bundled VS Code extension provides:
 
 - **Hover tooltips** — Hover any symbol to see type, params, callers
