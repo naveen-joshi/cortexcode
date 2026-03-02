@@ -222,6 +222,74 @@ class CortexCodeMCPServer:
                     },
                 },
             },
+            {
+                "name": "cortexcode_fuzzy_search",
+                "description": "USE THIS when exact search returns no results, or user has a typo or partial name. Fuzzy search finds approximate matches using similarity scoring.",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "query": {"type": "string", "description": "Approximate symbol name to search for"},
+                        "threshold": {"type": "number", "description": "Minimum similarity score 0-1 (default 0.5)", "default": 0.5},
+                        "limit": {"type": "integer", "description": "Max results (default 20)", "default": 20},
+                    },
+                    "required": ["query"],
+                },
+            },
+            {
+                "name": "cortexcode_regex_search",
+                "description": "USE THIS when user wants to search with a pattern, like 'find all getters' or 'functions starting with handle'. Supports regex patterns.",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "pattern": {"type": "string", "description": "Regex pattern to match symbol names (e.g. '^get.*', 'handle.*Request$')"},
+                        "type": {"type": "string", "description": "Filter by type: function, class, method, interface", "enum": ["function", "class", "method", "interface"]},
+                        "limit": {"type": "integer", "description": "Max results (default 20)", "default": 20},
+                    },
+                    "required": ["pattern"],
+                },
+            },
+            {
+                "name": "cortexcode_duplicates",
+                "description": "USE THIS when user asks about code duplication, copy-paste code, or repeated logic. Finds exact and near-duplicate functions.",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "min_lines": {"type": "integer", "description": "Minimum function lines to consider (default 5)", "default": 5},
+                    },
+                },
+            },
+            {
+                "name": "cortexcode_security_scan",
+                "description": "USE THIS when user asks about security issues, vulnerabilities, hardcoded secrets, SQL injection, or XSS risks. Scans source code for common security problems.",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {},
+                },
+            },
+            {
+                "name": "cortexcode_circular_deps",
+                "description": "USE THIS when user asks about circular dependencies, import cycles, or dependency loops.",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {},
+                },
+            },
+            {
+                "name": "cortexcode_endpoints",
+                "description": "USE THIS when user asks about API endpoints, routes, REST APIs, or wants a list of all URLs/paths in the app. Detects Express, Flask, FastAPI, Django, Next.js, Spring, Go, Rails routes.",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {},
+                },
+            },
+            {
+                "name": "cortexcode_api_docs",
+                "description": "USE THIS when user asks to generate documentation, see doc coverage, or find undocumented functions. Auto-generates API docs from signatures and docstrings.",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {},
+                },
+            },
         ]
     
     def _call_tool(self, req_id: Any, tool_name: str, args: dict) -> dict:
@@ -255,6 +323,20 @@ class CortexCodeMCPServer:
                 result = self._tool_impact(args)
             elif tool_name == "cortexcode_file_deps":
                 result = self._tool_file_deps(args)
+            elif tool_name == "cortexcode_fuzzy_search":
+                result = self._tool_fuzzy_search(args)
+            elif tool_name == "cortexcode_regex_search":
+                result = self._tool_regex_search(args)
+            elif tool_name == "cortexcode_duplicates":
+                result = self._tool_duplicates(args)
+            elif tool_name == "cortexcode_security_scan":
+                result = self._tool_security_scan(args)
+            elif tool_name == "cortexcode_circular_deps":
+                result = self._tool_circular_deps(args)
+            elif tool_name == "cortexcode_endpoints":
+                result = self._tool_endpoints(args)
+            elif tool_name == "cortexcode_api_docs":
+                result = self._tool_api_docs(args)
             else:
                 return create_mcp_error(req_id, -32602, f"Unknown tool: {tool_name}")
             
@@ -430,6 +512,66 @@ class CortexCodeMCPServer:
             return {"error": f"No dependencies found for: {file_path}"}
         
         return {"file_dependencies": file_deps}
+    
+    def _tool_fuzzy_search(self, args: dict) -> dict:
+        """Fuzzy search for symbols."""
+        from cortexcode.advanced_analysis import fuzzy_search
+        
+        query = args.get("query", "")
+        threshold = args.get("threshold", 0.5)
+        limit = args.get("limit", 20)
+        
+        results = fuzzy_search(self.index, query, threshold, limit)
+        return {"count": len(results), "results": results}
+    
+    def _tool_regex_search(self, args: dict) -> dict:
+        """Regex search for symbols."""
+        from cortexcode.advanced_analysis import regex_search
+        
+        pattern = args.get("pattern", "")
+        sym_type = args.get("type")
+        limit = args.get("limit", 20)
+        
+        results = regex_search(self.index, pattern, sym_type, limit)
+        return {"count": len(results), "results": results}
+    
+    def _tool_duplicates(self, args: dict) -> dict:
+        """Find duplicate code."""
+        from cortexcode.advanced_analysis import detect_duplicates
+        
+        min_lines = args.get("min_lines", 5)
+        root = str(self.index_path.parent.parent)
+        
+        dupes = detect_duplicates(self.index, root, min_lines)
+        return {"count": len(dupes), "duplicates": dupes}
+    
+    def _tool_security_scan(self, args: dict) -> dict:
+        """Scan for security issues."""
+        from cortexcode.advanced_analysis import security_scan
+        
+        root = str(self.index_path.parent.parent)
+        return security_scan(root, self.index)
+    
+    def _tool_circular_deps(self, args: dict) -> dict:
+        """Detect circular dependencies."""
+        from cortexcode.advanced_analysis import detect_circular_deps
+        
+        cycles = detect_circular_deps(self.index)
+        return {"count": len(cycles), "cycles": cycles}
+    
+    def _tool_endpoints(self, args: dict) -> dict:
+        """Extract API endpoints."""
+        from cortexcode.advanced_analysis import extract_endpoints
+        
+        root = str(self.index_path.parent.parent)
+        return extract_endpoints(self.index, root)
+    
+    def _tool_api_docs(self, args: dict) -> dict:
+        """Generate API documentation."""
+        from cortexcode.advanced_analysis import generate_api_docs
+        
+        root = str(self.index_path.parent.parent)
+        return generate_api_docs(self.index, root)
 
 
 def run_stdio_server(index_path: Path | None = None):

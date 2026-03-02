@@ -46,19 +46,39 @@ Add to your MCP config:
 }
 ```
 
-### Available MCP Tools
+### Available MCP Tools (17 tools)
 
+**Search & Navigation**
 | Tool | Description | Trigger Phrases |
 |------|-------------|-----------------|
 | `cortexcode_search` | Find symbols by name | "find", "search for", "where is" |
+| `cortexcode_fuzzy_search` | Fuzzy/approximate search | typos, partial names |
+| `cortexcode_regex_search` | Regex pattern search | "find all getters", "functions starting with" |
 | `cortexcode_context` | Get symbol implementation | "how does X work", "show me code" |
-| `cortexcode_file_symbols` | List symbols in a file | "symbols in file" |
+| `cortexcode_file_symbols` | List symbols in a file | "what's in this file" |
 | `cortexcode_call_graph` | Trace callers/callees | "what uses this", "where is called" |
-| `cortexcode_diff` | Changed symbols | "what changed", "modified" |
-| `cortexcode_stats` | Project statistics | "project size", "how big" |
+
+**Analysis**
+| Tool | Description | Trigger Phrases |
+|------|-------------|-----------------|
 | `cortexcode_deadcode` | Find unused code | "dead code", "not used" |
 | `cortexcode_complexity` | Complex functions | "complex code", "hard to maintain" |
-| `cortexcode_impact` | Change impact analysis | "what breaks", "impact of changing" |
+| `cortexcode_impact` | Change impact analysis | "what breaks if I change X" |
+| `cortexcode_duplicates` | Duplicate code detection | "copy-paste", "repeated code" |
+| `cortexcode_circular_deps` | Circular dependency detection | "import cycles", "circular" |
+
+**Security & Quality**
+| Tool | Description | Trigger Phrases |
+|------|-------------|-----------------|
+| `cortexcode_security_scan` | Security vulnerability scan | "secrets", "SQL injection", "XSS" |
+| `cortexcode_endpoints` | API endpoint extraction | "routes", "APIs", "endpoints" |
+| `cortexcode_api_docs` | Auto-generate API docs | "documentation", "undocumented" |
+
+**Project Info**
+| Tool | Description | Trigger Phrases |
+|------|-------------|-----------------|
+| `cortexcode_stats` | Project statistics | "project size", "how big" |
+| `cortexcode_diff` | Changed symbols | "what changed", "modified" |
 | `cortexcode_file_deps` | File dependencies | "depends on", "imports" |
 
 ## Requirements

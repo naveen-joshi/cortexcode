@@ -285,16 +285,31 @@ cortexcode mcp
 }
 ```
 
-Available MCP tools:
+Available MCP tools (17 tools):
+
+**Search & Navigation:**
 - **`cortexcode_search`** — Search symbols by name
+- **`cortexcode_fuzzy_search`** — Fuzzy/approximate search (handles typos)
+- **`cortexcode_regex_search`** — Regex pattern search (e.g. `^get.*`)
 - **`cortexcode_context`** — Get rich context with callers/callees
 - **`cortexcode_file_symbols`** — List all symbols in a file
 - **`cortexcode_call_graph`** — Trace call graph for a symbol
-- **`cortexcode_diff`** — Get changed symbols since last commit
-- **`cortexcode_stats`** — Get project statistics
+
+**Analysis:**
 - **`cortexcode_deadcode`** — Find potentially unused symbols
 - **`cortexcode_complexity`** — Find most complex functions
 - **`cortexcode_impact`** — Analyze change impact of a symbol
+- **`cortexcode_duplicates`** — Detect duplicate/copy-paste code
+- **`cortexcode_circular_deps`** — Find circular dependencies
+
+**Security & Quality:**
+- **`cortexcode_security_scan`** — Scan for hardcoded secrets, SQL injection, XSS
+- **`cortexcode_endpoints`** — Extract API endpoints (Express, Flask, Django, Next.js, etc.)
+- **`cortexcode_api_docs`** — Auto-generate API docs from signatures
+
+**Project Info:**
+- **`cortexcode_stats`** — Get project statistics
+- **`cortexcode_diff`** — Get changed symbols since last commit
 - **`cortexcode_file_deps`** — Get file dependency graph
 
 ### 4. LSP Server

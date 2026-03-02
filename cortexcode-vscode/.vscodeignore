@@ -1,0 +1,9 @@
+.vscode/**
+.vscode-test/**
+*.ts
+!src/extension.js
+tsconfig.json
+bump-version.ps1
+.gitignore
+**/*.map
+node_modules/**

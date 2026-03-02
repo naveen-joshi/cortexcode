@@ -73,10 +73,34 @@ class CodeIndexer:
         self.file_symbols: dict[str, list[dict[str, Any]]] = {}
         self.gitignore_patterns: list[tuple[str, bool]] = []
         self.default_ignore_patterns = {
-            "__pycache__", ".git", ".venv", "venv", "node_modules",
-            ".pytest_cache", ".mypy_cache", ".ruff_cache", ".cortexcode",
-            "dist", "build", "target", ".idea", ".vscode", ".next", ".nuxt",
-            ".svelte-kit", "coverage", ".cache", "*.log", ".env.local"
+            # Python
+            "__pycache__", ".venv", "venv", "env", ".env", "virtualenv",
+            ".pytest_cache", ".mypy_cache", ".ruff_cache", ".tox", ".nox",
+            "*.egg-info", ".eggs", "*.pyc", "*.pyo",
+            # Node/JS
+            "node_modules", ".npm", ".yarn", ".pnpm-store", "bower_components",
+            # Build outputs
+            "dist", "build", "out", "output", "target", "bin", "obj",
+            ".build", "_build", "public/build", "lib",
+            # Framework-specific
+            ".next", ".nuxt", ".svelte-kit", ".angular", ".turbo",
+            ".parcel-cache", ".webpack", ".rollup.cache", ".vite",
+            ".expo", ".gradle", "Pods", "DerivedData",
+            # IDE/Editor
+            ".idea", ".vscode", ".vs", "*.sublime-*",
+            # Version control
+            ".git", ".svn", ".hg",
+            # Cache/temp
+            ".cache", ".tmp", "tmp", "temp", ".temp",
+            "coverage", ".nyc_output", ".jest",
+            # CortexCode
+            ".cortexcode",
+            # Misc
+            "*.log", ".env.local", ".DS_Store", "Thumbs.db",
+            "vendor", "third_party", "external", "deps",
+            "__tests__", "__mocks__", "test_fixtures",
+            ".serverless", ".terraform", ".pulumi",
+            "android/app/build", "ios/build", "ios/Pods",
         }
     
     def _get_parser(self, ext: str) -> Parser | None:
