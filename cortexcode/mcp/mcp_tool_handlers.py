@@ -1,8 +1,8 @@
 import json
 from typing import Any
 
-from cortexcode.mcp_protocol import create_mcp_error, create_mcp_response
-from cortexcode.mcp_registry import TOOL_HANDLERS
+from cortexcode.mcp.mcp_protocol import create_mcp_error, create_mcp_response
+from cortexcode.mcp.mcp_registry import TOOL_HANDLERS
 
 
 class MCPToolHandlersMixin:

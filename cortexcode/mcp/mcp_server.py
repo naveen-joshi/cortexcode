@@ -9,10 +9,10 @@ Usage:
 """
 
 from pathlib import Path
-from cortexcode.mcp_protocol import create_mcp_error, create_mcp_response
-from cortexcode.mcp_registry import get_mcp_tools
-from cortexcode.mcp_tool_handlers import MCPToolHandlersMixin
-from cortexcode.mcp_transport import auto_index_project, load_index, run_stdio_transport
+from cortexcode.mcp.mcp_protocol import create_mcp_error, create_mcp_response
+from cortexcode.mcp.mcp_registry import get_mcp_tools
+from cortexcode.mcp.mcp_tool_handlers import MCPToolHandlersMixin
+from cortexcode.mcp.mcp_transport import auto_index_project, load_index, run_stdio_transport
 
 
 class CortexCodeMCPServer(MCPToolHandlersMixin):

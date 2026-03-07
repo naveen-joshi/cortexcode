@@ -5,6 +5,38 @@ All notable changes to CortexCode will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.0] - 2025-03-07
+
+### Added
+
+- **CodeWiki** — AI-powered documentation site generator with `cortexcode wiki` command
+  - Multi-page wiki with AI-generated content (Overview, Architecture, Code Flows, API Reference, Concepts Guide)
+  - Per-module documentation pages for each Python/JS file
+  - Mermaid diagram rendering support
+  - Concept mapping and concept search ("how does authentication work?")
+  - Token tracking per page
+  - Supports Google Gemini, OpenAI, Anthropic, and Ollama providers
+- **Ask command** — `cortexcode ask "question"` - Ask natural language questions about your codebase
+- **VSCode extension wiki command** — Added `cortexcode.wiki` command and `/wiki`, `/ask` chat commands
+- **Mermaid diagram rendering** — Fixed rendering in generated wiki with proper SVG output
+
+### Changed
+
+- **Default provider** — Changed from OpenAI to Google/Gemini as the default AI provider
+- **Code organization** — Reorganized flat files into subpackages:
+  - `cortexcode/cli/` — CLI command handlers
+  - `cortexcode/mcp/` — MCP server modules
+  - `cortexcode/analysis/` — Analysis modules
+  - `cortexcode/performance/` — Performance modules
+  - `cortexcode/context/` — Context provider modules
+  - `cortexcode/advanced_analysis/` — Advanced analysis modules
+
+### Fixed
+
+- **Module page navigation** — Fixed backslash escaping in JavaScript for module page links
+- **Wiki list styles** — Improved CSS for ordered/unordered lists with custom bullets
+- **Mermaid errors** — Fixed "Unable to render this Mermaid diagram" error by using correct v11 API
+
 ## [0.3.0] - 2025-03-01
 
 ### Added

@@ -14,8 +14,8 @@ CONFIG_FILE = CONFIG_DIR / "config.json"
 @dataclass
 class AIConfig:
     """AI documentation configuration."""
-    provider: str = "openai"
-    model: str = "gpt-4o"
+    provider: str = "google"
+    model: str = "gemini-3-flash-preview"
     temperature: float = 0.7
     max_tokens: int = 4096
     
@@ -56,12 +56,16 @@ def get_api_key(provider: str) -> Optional[str]:
         return config[key_name]
     
     env_mapping = {
-        "openai": "OPENAI_API_KEY",
-        "anthropic": "ANTHROPIC_API_KEY",
-        "google": "GOOGLE_API_KEY",
+        "openai": ["OPENAI_API_KEY"],
+        "anthropic": ["ANTHROPIC_API_KEY"],
+        "google": ["GEMINI_API_KEY", "GOOGLE_API_KEY"],
     }
     
-    return os.environ.get(env_mapping.get(provider, ""))
+    for env_var in env_mapping.get(provider, []):
+        val = os.environ.get(env_var)
+        if val:
+            return val
+    return None
 
 
 def set_api_key(provider: str, api_key: str) -> None:
@@ -77,8 +81,8 @@ def get_config() -> AIConfig:
     config = _load_config()
     
     return AIConfig(
-        provider=config.get("ai_provider", "openai"),
-        model=config.get("ai_model", "gpt-4o"),
+        provider=config.get("ai_provider", "google"),
+        model=config.get("ai_model", "gemini-3-flash-preview"),
         temperature=config.get("ai_temperature", 0.7),
         max_tokens=config.get("ai_max_tokens", 4096),
     )

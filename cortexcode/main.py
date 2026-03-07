@@ -4,27 +4,28 @@ import click
 from rich.console import Console
 
 from cortexcode import indexer
-from cortexcode.cli_config import handle_config_action
-from cortexcode.cli_ai_docs import handle_ai_docs_command
-from cortexcode.cli_complexity import handle_complexity_command
-from cortexcode.cli_context import handle_context_command
-from cortexcode.cli_dashboard import handle_dashboard_command
-from cortexcode.cli_dead_code import handle_dead_code_command
-from cortexcode.cli_diff import handle_diff_command
-from cortexcode.cli_diagrams import handle_diagrams_command
-from cortexcode.cli_docs import handle_docs_command
-from cortexcode.cli_explain import handle_explain_command
-from cortexcode.cli_find import handle_semantic_find_command
-from cortexcode.cli_impact import handle_impact_command
-from cortexcode.cli_index import handle_index_command
-from cortexcode.cli_report import handle_report_command
-from cortexcode.cli_scan import handle_scan_command
-from cortexcode.cli_search import handle_search_command
-from cortexcode.cli_servers import handle_lsp_command, handle_mcp_command
-from cortexcode.cli_stats import handle_stats_command
-from cortexcode.cli_support import require_ai_doc_generator, require_index_path
-from cortexcode.cli_watch import handle_watch_command
-from cortexcode.cli_workspace import handle_workspace_add, handle_workspace_index, handle_workspace_init, handle_workspace_list, handle_workspace_remove, handle_workspace_search
+from cortexcode.cli import handle_config_action
+from cortexcode.cli import handle_ai_docs_command
+from cortexcode.cli import handle_complexity_command
+from cortexcode.cli import handle_context_command
+from cortexcode.cli import handle_dashboard_command
+from cortexcode.cli import handle_dead_code_command
+from cortexcode.cli import handle_diff_command
+from cortexcode.cli import handle_diagrams_command
+from cortexcode.cli import handle_docs_command
+from cortexcode.cli import handle_explain_command
+from cortexcode.cli import handle_semantic_find_command
+from cortexcode.cli import handle_impact_command
+from cortexcode.cli import handle_index_command
+from cortexcode.cli import handle_report_command
+from cortexcode.cli import handle_scan_command
+from cortexcode.cli import handle_search_command
+from cortexcode.cli import handle_lsp_command, handle_mcp_command
+from cortexcode.cli import handle_stats_command
+from cortexcode.cli import require_ai_doc_generator, require_index_path
+from cortexcode.cli import handle_watch_command
+from cortexcode.cli import handle_wiki_command
+from cortexcode.cli import handle_workspace_add, handle_workspace_index, handle_workspace_init, handle_workspace_list, handle_workspace_remove, handle_workspace_search
 from cortexcode.context import get_context, calculate_token_savings
 from cortexcode.git_diff import get_diff_context
 from cortexcode.docs import generate_all_docs
@@ -272,7 +273,7 @@ def stats():
 @main.command()
 def mcp():
     """Start MCP server for AI agent integration (stdin/stdout)."""
-    from cortexcode.mcp_server import run_stdio_server
+    from cortexcode.mcp import run_stdio_server
 
     handle_mcp_command(console, run_stdio_server)
 
@@ -413,6 +414,72 @@ def dashboard(path, port):
     from cortexcode.dashboard import DashboardServer
 
     handle_dashboard_command(console, path, port, indexer, DashboardServer)
+
+
+@main.command()
+@click.argument("path", default=".", type=click.Path(exists=True))
+@click.option("-o", "--output", default=".cortexcode/wiki", help="Output directory for wiki site")
+@click.option("-p", "--provider", default=None, type=click.Choice(["openai", "anthropic", "google", "ollama"]), help="LLM provider")
+@click.option("-m", "--model", default=None, help="Model name")
+@click.option("--pages", multiple=True, help="Which pages to generate (default: all)")
+@click.option("--no-modules", is_flag=True, help="Skip per-module page generation")
+@click.option("--max-modules", default=15, help="Max number of module pages")
+@click.option("--open", "open_browser", is_flag=True, help="Open wiki in browser after generation")
+def wiki(path, output, provider, model, pages, no_modules, max_modules, open_browser):
+    """Generate a CodeWiki-style documentation site with AI.
+
+    Builds a multi-page interactive wiki from the project index using
+    Gemini (default) or other LLM providers. Includes concept search
+    for non-technical queries like 'how does authentication work?'
+    """
+    handle_wiki_command(
+        console, path, output, provider, model, pages or None,
+        no_modules, max_modules, open_browser,
+    )
+
+
+@main.command()
+@click.argument("query")
+@click.argument("path", default=".", type=click.Path(exists=True))
+@click.option("-p", "--provider", default=None, type=click.Choice(["openai", "anthropic", "google", "ollama"]), help="LLM provider")
+@click.option("-m", "--model", default=None, help="Model name")
+def ask(query, path, provider, model):
+    """Ask a natural language question about the codebase.
+
+    Examples:
+        cortexcode ask "how does authentication work?"
+        cortexcode ask "where is user data stored?"
+        cortexcode ask "what happens when a user logs in?"
+    """
+    from pathlib import Path as P
+    from cortexcode.knowledge.build import build_knowledge_pack
+    from cortexcode.ai_docs.config import get_config
+    from cortexcode.ai_docs.explainer import Explainer
+    from cortexcode.cli.cli_wiki import _ensure_api_key
+
+    project_path = P(path).resolve()
+    index_path = project_path / ".cortexcode" / "index.json"
+    if not index_path.exists():
+        console.print("[bold red]Error:[/bold red] No index found. Run [cyan]cortexcode index[/cyan] first.")
+        return
+
+    resolved_provider = provider or get_config().provider
+    api_key = _ensure_api_key(console, resolved_provider)
+    if not api_key:
+        console.print("[bold red]Cannot answer without an API key.[/bold red]")
+        return
+
+    console.print(f"[dim]Building knowledge pack...[/dim]")
+    pack = build_knowledge_pack(index_path)
+    console.print(f"[dim]{pack.symbol_count} symbols, {len(pack.concepts)} concepts loaded[/dim]\n")
+
+    explainer = Explainer(provider=resolved_provider, model=model, api_key=api_key)
+    answer, usage = explainer.explain(query, pack)
+
+    console.print(answer)
+
+    if usage:
+        console.print(f"\n[dim]({usage.total_tokens:,} tokens · {usage.provider}/{usage.model})[/dim]")
 
 
 if __name__ == "__main__":

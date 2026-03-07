@@ -2,7 +2,7 @@
   "name": "cortexcode-vscode",
   "displayName": "CortexCode - AI Code Index",
   "description": "Lightweight code indexing for AI assistants. Use @cortexcode in Copilot Chat to search symbols, analyze impact, find dead code, and get code context. Works with VS Code, Windsurf, and Cursor.",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "publisher": "cortexcode",
   "license": "MIT",
   "repository": {
@@ -68,6 +68,11 @@
         "command": "cortexcode.showSymbols",
         "title": "CortexCode: Show All Symbols",
         "description": "Show all indexed symbols"
+      },
+      {
+        "command": "cortexcode.wiki",
+        "title": "CortexCode: Generate Wiki",
+        "description": "Generate a CodeWiki documentation site with AI"
       }
     ],
     "chatParticipants": [
@@ -75,7 +80,7 @@
         "id": "cortexcode.chat",
         "name": "cortexcode",
         "fullName": "CortexCode",
-        "description": "Ask questions about your codebase using the CortexCode index. Use /search, /context, /impact, /deadcode, /complexity commands.",
+        "description": "Ask questions about your codebase using the CortexCode index. Use /search, /context, /impact, /deadcode, /complexity, /wiki, /ask commands.",
         "isSticky": true,
         "commands": [
           {
@@ -97,6 +102,14 @@
           {
             "name": "search",
             "description": "Search symbols by name"
+          },
+          {
+            "name": "wiki",
+            "description": "Generate CodeWiki documentation site"
+          },
+          {
+            "name": "ask",
+            "description": "Ask a natural language question about the codebase"
           }
         ]
       }

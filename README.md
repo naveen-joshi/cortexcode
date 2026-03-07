@@ -125,6 +125,27 @@ Generate a full interactive documentation site with:
 cortexcode docs --open
 ```
 
+### CodeWiki — AI-Powered Documentation Site
+
+Generate a multi-page **CodeWiki** documentation site powered by AI (Gemini, OpenAI, Anthropic, or Ollama):
+
+```bash
+cortexcode wiki                    # Generate with default AI provider
+cortexcode wiki --provider google  # Use Gemini
+cortexcode wiki --open             # Generate and open in browser
+cortexcode wiki --no-modules       # Skip per-module pages (faster)
+```
+
+**Features:**
+- **AI-generated pages** — Overview, Architecture, Code Flows, API Reference, Concepts Guide
+- **Per-module docs** — Each Python/JS file gets AI-generated documentation
+- **Mermaid diagrams** — Auto-generated flow diagrams
+- **Concept mapping** — Maps technical concepts to symbols and files
+- **Concept search** — Ask "how does authentication work?" and get grounded answers
+- **Token tracking** — See exactly how many tokens each page used
+
+**Output:** `.cortexcode/wiki/index.html` — Open directly or serve locally.
+
 ### Incremental Indexing
 
 Only re-index files that changed since last run:
@@ -178,6 +199,8 @@ npm install && npm run compile
 | `cortexcode watch` | Auto-reindex on file changes |
 | `cortexcode mcp` | Start MCP server for AI agent integration |
 | `cortexcode lsp` | Start Language Server Protocol server |
+| `cortexcode wiki` | Generate CodeWiki documentation site with AI |
+| `cortexcode ask` | Ask a natural language question about the codebase |
 
 ## How AI Agents Use This
 

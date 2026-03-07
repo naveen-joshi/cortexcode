@@ -2,7 +2,7 @@ import json
 import sys
 from pathlib import Path
 
-from cortexcode.mcp_protocol import create_mcp_error
+from cortexcode.mcp.mcp_protocol import create_mcp_error
 
 
 def load_index(index_path: Path) -> dict | None:

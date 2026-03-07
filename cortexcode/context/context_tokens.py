@@ -2,7 +2,7 @@ import json
 from pathlib import Path
 from typing import Any
 
-from cortexcode.context_query import get_context
+from cortexcode.context.context_query import get_context
 
 
 _tiktoken_encoder = None

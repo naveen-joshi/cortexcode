@@ -51,21 +51,25 @@ class LLMClient:
             except Exception:
                 pass
         
-        env_mapping = {
-            LLMProvider.OPENAI: "OPENAI_API_KEY",
-            LLMProvider.ANTHROPIC: "ANTHROPIC_API_KEY",
-            LLMProvider.GOOGLE: "GOOGLE_API_KEY",
-            LLMProvider.OLLAMA: "OLLAMA_BASE_URL",
+        env_mapping: Dict[LLMProvider, List[str]] = {
+            LLMProvider.OPENAI: ["OPENAI_API_KEY"],
+            LLMProvider.ANTHROPIC: ["ANTHROPIC_API_KEY"],
+            LLMProvider.GOOGLE: ["GEMINI_API_KEY", "GOOGLE_API_KEY"],
+            LLMProvider.OLLAMA: ["OLLAMA_BASE_URL"],
         }
         
-        return os.environ.get(env_mapping.get(provider, ""))
+        for env_var in env_mapping.get(provider, []):
+            val = os.environ.get(env_var)
+            if val:
+                return val
+        return None
 
     def _default_model(self, provider: LLMProvider) -> str:
         """Get default model for provider."""
         defaults = {
             LLMProvider.OPENAI: "gpt-4o",
             LLMProvider.ANTHROPIC: "claude-sonnet-4-20250514",
-            LLMProvider.GOOGLE: "gemini-2.0-flash",
+            LLMProvider.GOOGLE: "gemini-3-flash-preview",
             LLMProvider.OLLAMA: "llama3",
         }
         return defaults.get(provider, "gpt-4o")
@@ -169,34 +173,62 @@ class LLMClient:
         temperature: float,
         max_tokens: Optional[int],
     ) -> LLMResponse:
-        """Google Gemini API completion."""
+        """Google Gemini API completion using the google-genai SDK."""
         try:
-            import google.generativeai as genai
+            from google import genai
+            from google.genai import types
         except ImportError:
-            raise ImportError("google-generativeai package required. Install with: pip install google-generativeai")
+            raise ImportError("google-genai package required. Install with: pip install google-genai")
 
-        genai.configure(api_key=self.api_key)
-        
-        model = genai.GenerativeModel(self.model)
-        
+        client = genai.Client(api_key=self.api_key)
+
+        # Build contents: combine system instruction + user messages
+        system_instruction = None
         contents = []
         for msg in messages:
-            if msg.get("role") == "system":
-                continue
-            contents.append(msg.get("content", ""))
-        
-        response = model.generate_content(
-            "\n".join(contents),
-            generation_config={
-                "temperature": temperature,
-                "max_output_tokens": max_tokens,
-            },
+            role = msg.get("role", "user")
+            text = msg.get("content", "")
+            if role == "system":
+                system_instruction = text
+            else:
+                contents.append(types.Content(
+                    role="user" if role == "user" else "model",
+                    parts=[types.Part(text=text)],
+                ))
+
+        config = types.GenerateContentConfig(
+            temperature=temperature,
+            max_output_tokens=max_tokens,
         )
-        
+        if system_instruction:
+            config.system_instruction = system_instruction
+
+        response = client.models.generate_content(
+            model=self.model,
+            contents=contents,
+            config=config,
+        )
+
+        # Best-effort token reporting for Gemini
+        usage: Dict[str, int] = {"total_tokens": 0}
+        try:
+            if hasattr(response, "usage_metadata") and response.usage_metadata:
+                um = response.usage_metadata
+                prompt_tokens = getattr(um, "prompt_token_count", 0) or 0
+                completion_tokens = getattr(um, "candidates_token_count", 0) or 0
+                total = getattr(um, "total_token_count", 0) or (prompt_tokens + completion_tokens)
+                usage = {
+                    "prompt_tokens": prompt_tokens,
+                    "completion_tokens": completion_tokens,
+                    "total_tokens": total,
+                }
+        except Exception:
+            pass
+
         return LLMResponse(
             content=response.text,
             model=self.model,
-            usage={"total_tokens": 0},
+            usage=usage,
         )
 
     def _ollama_complete(

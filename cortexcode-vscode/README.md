@@ -1,9 +1,10 @@
 # CortexCode - AI Code Index
 
-Lightweight code indexing for AI assistants. Use `@cortexcode` in Copilot Chat or configure MCP to enable AI agents to understand your codebase.
+Lightweight code indexing for AI assistants. Use `@cortexcode` in Copilot Chat, run `cortexcode wiki` to generate documentation, or configure MCP to enable AI agents to understand your codebase.
 
 ## Features
 
+- **CodeWiki** — Generate AI-powered documentation sites with `cortexcode wiki`
 - **Copilot Chat Integration** — Use `@cortexcode` in Copilot Chat to query your codebase
 - **MCP Server** — AI agents can use CortexCode tools via Model Context Protocol
 - **Hover Tooltips** — Hover over any symbol to see its definition
@@ -11,15 +12,33 @@ Lightweight code indexing for AI assistants. Use `@cortexcode` in Copilot Chat o
 - **Auto-indexing** — Automatically indexes your project on open
 - **Live Updates** — Re-indexes when files change
 
-## Installation
+## Quick Start
 
-### From VS Code Marketplace
-Search for "CortexCode" in VS Code extensions and install.
+```bash
+# Install CortexCode CLI
+pip install cortexcode
 
-### From Open VSX (Windsurf, VSCodium)
-Search for "CortexCode" in your editor's extension marketplace.
+# Index your project
+cortexcode index
 
-## Copilot Chat Commands
+# Generate CodeWiki documentation
+cortexcode wiki --open
+```
+
+## Commands
+
+### Terminal Commands
+
+| Command | Description |
+|---------|-------------|
+| `cortexcode index` | Index your project |
+| `cortexcode wiki` | Generate AI-powered documentation site |
+| `cortexcode wiki --open` | Generate and open wiki in browser |
+| `cortexcode context <query>` | Get relevant code context |
+| `cortexcode search <name>` | Search symbols by name |
+| `cortexcode impact <symbol>` | Analyze change impact |
+
+### Copilot Chat Commands
 
 In Copilot Chat, use these commands with `@cortexcode`:
 
@@ -30,6 +49,8 @@ In Copilot Chat, use these commands with `@cortexcode`:
 | `@cortexcode /impact <symbol>` | Analyze change impact |
 | `@cortexcode /deadcode` | Find unused symbols |
 | `@cortexcode /complexity` | View complex functions |
+| `@cortexcode /wiki` | Generate CodeWiki documentation |
+| `@cortexcode /ask <question>` | Ask a question about your codebase |
 
 ## MCP Configuration (Windsurf, Cursor, Claude Desktop)
 

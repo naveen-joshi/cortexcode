@@ -1,8 +1,6 @@
 """Context Provider - Get relevant context for AI assistants."""
 
-from cortexcode.context_format import format_context_for_ai
-from cortexcode.context_query import get_context
-from cortexcode.context_tokens import calculate_token_savings, estimate_file_tokens, estimate_tokens
+from cortexcode.context import estimate_tokens, estimate_file_tokens, calculate_token_savings, get_context, format_context_for_ai
 
 
 __all__ = [

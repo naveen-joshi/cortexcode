@@ -247,6 +247,18 @@ export async function activate(context: vscode.ExtensionContext) {
         terminal.show();
     });
 
+    // Command: Generate wiki
+    const wikiCommand = vscode.commands.registerCommand('cortexcode.wiki', async () => {
+        if (!rootPath) {
+            vscode.window.showErrorMessage('No workspace folder found');
+            return;
+        }
+
+        const terminal = vscode.window.createTerminal('CortexCode Wiki');
+        terminal.sendText(`cd "${rootPath}" && cortexcode wiki --open`);
+        terminal.show();
+    });
+
     // Command: Get context for symbol
     const contextCommand = vscode.commands.registerCommand('cortexcode.getContext', async () => {
         const editor = vscode.window.activeTextEditor;
@@ -376,7 +388,7 @@ export async function activate(context: vscode.ExtensionContext) {
         console.error('Failed to create chat participant:', e);
     }
 
-    context.subscriptions.push(indexCommand, docsCommand, contextCommand, symbolsCommand, statusBar);
+    context.subscriptions.push(indexCommand, docsCommand, wikiCommand, contextCommand, symbolsCommand, statusBar);
     if (chatParticipant) {
         context.subscriptions.push(chatParticipant);
     }
