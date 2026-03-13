@@ -1,0 +1,92 @@
+---
+const links = {
+  product: [
+    { label: 'Features', href: '#features' },
+    { label: 'Languages', href: '#languages' },
+    { label: 'CLI', href: '#cli' },
+    { label: 'Integrations', href: '#integrations' },
+    { label: 'Install', href: '#install' },
+  ],
+  resources: [
+    { label: 'Documentation', href: 'https://github.com/naveen-joshi/cortexcode#readme' },
+    { label: 'Changelog', href: 'https://github.com/naveen-joshi/cortexcode/blob/main/CHANGELOG.md' },
+    { label: 'PyPI', href: 'https://pypi.org/project/cortexcode/' },
+    { label: 'VS Code Extension', href: 'https://marketplace.visualstudio.com/items?itemName=cortexcode.cortexcode-vscode' },
+  ],
+  community: [
+    { label: 'GitHub', href: 'https://github.com/naveen-joshi/cortexcode' },
+    { label: 'Issues', href: 'https://github.com/naveen-joshi/cortexcode/issues' },
+    { label: 'Discussions', href: 'https://github.com/naveen-joshi/cortexcode/discussions' },
+  ],
+};
+---
+
+<footer class="border-t border-white/[0.04] bg-surface-900/40">
+  <div class="section-container py-16">
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-10">
+      <!-- Brand -->
+      <div>
+        <div class="flex items-center gap-2.5 mb-4">
+          <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-brand-400 to-brand-600 flex items-center justify-center">
+            <svg class="w-4 h-4 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 4.5a2.5 2.5 0 0 0-4.96-.46 2.5 2.5 0 0 0-1.98 3 2.5 2.5 0 0 0 1.32 4.24 3 3 0 0 0 .34 5.58 2.5 2.5 0 0 0 5.28.55"/>
+              <path d="M12 4.5a2.5 2.5 0 0 1 4.96-.46 2.5 2.5 0 0 1 1.98 3 2.5 2.5 0 0 1-1.32 4.24 3 3 0 0 1-.34 5.58 2.5 2.5 0 0 1-5.28.55"/>
+              <circle cx="12" cy="12" r="2"/>
+            </svg>
+          </div>
+          <span class="text-lg font-bold text-white">CortexCode</span>
+        </div>
+        <p class="text-sm text-gray-500 leading-relaxed">
+          AI-powered code intelligence. Index your codebase, save 90%+ tokens, and give AI assistants structured context.
+        </p>
+        <div class="mt-4 flex items-center gap-1">
+          <a href="https://pypi.org/project/cortexcode/" target="_blank" rel="noopener">
+            <img src="https://img.shields.io/pypi/v/cortexcode?style=flat-square&color=06b6d4" alt="PyPI" class="h-5" />
+          </a>
+          <a href="https://github.com/naveen-joshi/cortexcode" target="_blank" rel="noopener">
+            <img src="https://img.shields.io/github/stars/naveen-joshi/cortexcode?style=flat-square&color=06b6d4" alt="Stars" class="h-5" />
+          </a>
+        </div>
+      </div>
+
+      <!-- Product -->
+      <div>
+        <h4 class="text-sm font-semibold text-white mb-4">Product</h4>
+        <ul class="space-y-2.5">
+          {links.product.map(link => (
+            <li><a href={link.href} class="text-sm text-gray-500 hover:text-brand-300 transition-colors">{link.label}</a></li>
+          ))}
+        </ul>
+      </div>
+
+      <!-- Resources -->
+      <div>
+        <h4 class="text-sm font-semibold text-white mb-4">Resources</h4>
+        <ul class="space-y-2.5">
+          {links.resources.map(link => (
+            <li><a href={link.href} target="_blank" rel="noopener" class="text-sm text-gray-500 hover:text-brand-300 transition-colors">{link.label}</a></li>
+          ))}
+        </ul>
+      </div>
+
+      <!-- Community -->
+      <div>
+        <h4 class="text-sm font-semibold text-white mb-4">Community</h4>
+        <ul class="space-y-2.5">
+          {links.community.map(link => (
+            <li><a href={link.href} target="_blank" rel="noopener" class="text-sm text-gray-500 hover:text-brand-300 transition-colors">{link.label}</a></li>
+          ))}
+        </ul>
+      </div>
+    </div>
+
+    <div class="mt-12 pt-8 border-t border-white/[0.04] flex flex-col sm:flex-row items-center justify-between gap-4">
+      <p class="text-xs text-gray-600">
+        &copy; {new Date().getFullYear()} CortexCode. MIT License.
+      </p>
+      <p class="text-xs text-gray-600">
+        Built by <a href="https://github.com/naveen-joshi" target="_blank" rel="noopener" class="text-gray-500 hover:text-brand-300 transition-colors">Naveen Joshi</a>
+      </p>
+    </div>
+  </div>
+</footer>

@@ -67,6 +67,7 @@ mobile = [
 
 [project.scripts]
 cortexcode = "cortexcode.main:main"
+cc = "cortexcode.main:main"
 
 [tool.setuptools.packages.find]
 where = ["."]

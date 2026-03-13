@@ -173,34 +173,93 @@ npm install && npm run compile
 
 ## Commands
 
+CortexCode supports both a short form (`cc`) and full form (`cortexcode`). Commands are organized into logical groups.
+
+### Core Commands
+
 | Command | Description |
 |---------|-------------|
-| `cortexcode index [path]` | Index a directory |
-| `cortexcode index -i` | Incremental index (changed files only) |
-| `cortexcode context [query]` | Get relevant context for AI |
-| `cortexcode context [query] --tokens` | Show token savings for query |
-| `cortexcode search [query]` | Grep-like symbol search with type/file filters |
-| `cortexcode find [query]` | Semantic search by meaning ("auth handler") |
-| `cortexcode diff` | Show changed symbols since last commit |
-| `cortexcode diff --ref HEAD~3` | Compare against any git ref |
-| `cortexcode stats` | Show project stats and token savings |
-| `cortexcode scan` | Scan dependencies for security warnings |
-| `cortexcode docs --open` | Generate and open interactive docs |
-| `cortexcode dead-code` | Detect potentially unused symbols |
-| `cortexcode complexity` | Analyze code complexity (cyclomatic, nesting, line count) |
-| `cortexcode complexity --min-score 50` | Show only high-complexity functions |
-| `cortexcode impact <symbol>` | Change impact analysis — what breaks if you modify a symbol |
-| `cortexcode dashboard` | Launch live dashboard with auto-refresh on index changes |
-| `cortexcode workspace init` | Initialize a multi-repo workspace |
-| `cortexcode workspace add <path>` | Add a repo to the workspace |
-| `cortexcode workspace list` | List repos in workspace |
-| `cortexcode workspace index` | Index all workspace repos |
-| `cortexcode workspace search <q>` | Search symbols across all repos |
-| `cortexcode watch` | Auto-reindex on file changes |
-| `cortexcode mcp` | Start MCP server for AI agent integration |
-| `cortexcode lsp` | Start Language Server Protocol server |
-| `cortexcode wiki` | Generate CodeWiki documentation site with AI |
-| `cortexcode ask` | Ask a natural language question about the codebase |
+| `cc index [path]` | Index a directory |
+| `cc index -i` | Incremental index (changed files only) |
+| `cc config` | Manage CortexCode configuration |
+| `cc workspace init` | Initialize a multi-repo workspace |
+| `cc workspace add <path>` | Add a repo to the workspace |
+| `cc workspace list` | List repos in workspace |
+| `cc workspace index` | Index all workspace repos |
+| `cc workspace search <q>` | Search symbols across all repos |
+
+### Analyze — Code Exploration & Analysis
+
+| Command | Description |
+|---------|-------------|
+| `cc analyze context [query]` | Get relevant context for AI |
+| `cc analyze context [query] --tokens` | Show token savings for query |
+| `cc analyze search [query]` | Grep-like symbol search with type/file filters |
+| `cc analyze find [query]` | Semantic search by meaning ("auth handler") |
+| `cc analyze diff` | Show changed symbols since last commit |
+| `cc analyze diff --ref HEAD~3` | Compare against any git ref |
+| `cc analyze stats` | Show project stats and token savings |
+| `cc analyze scan` | Scan dependencies for security warnings |
+| `cc analyze trace <symbol>` | Trace code flow through call graph |
+| `cc analyze flow <concept>` | Analyze code flow grouped by file |
+| `cc analyze dead-code` | Detect potentially unused symbols |
+| `cc analyze complexity` | Analyze code complexity (cyclomatic, nesting, line count) |
+| `cc analyze complexity --min-score 50` | Show only high-complexity functions |
+| `cc analyze impact <symbol>` | Change impact analysis — what breaks if you modify a symbol |
+| `cc analyze explain <symbol>` | Explain a symbol using AI |
+
+### Generate — Documentation & Visualization
+
+| Command | Description |
+|---------|-------------|
+| `cc generate docs --open` | Generate and open interactive docs |
+| `cc generate diagrams` | Generate Mermaid diagrams |
+| `cc generate diagrams --viz` | Interactive D3.js visualization |
+| `cc generate report` | Show interactive project report in terminal |
+| `cc generate ai-docs` | Generate AI-powered documentation |
+| `cc generate wiki` | Generate CodeWiki documentation site with AI |
+
+### AI — Natural Language Code Understanding
+
+| Command | Description |
+|---------|-------------|
+| `cc ai ask "question"` | Ask a natural language question about the codebase |
+| `cc ai explain <symbol>` | Explain a symbol using AI |
+| `cc ai docs` | Generate AI-powered documentation |
+| `cc ai wiki` | Generate CodeWiki documentation site with AI |
+
+### Serve — Long-Running Services
+
+| Command | Description |
+|---------|-------------|
+| `cc serve watch` | Auto-reindex on file changes |
+| `cc serve dashboard` | Launch live dashboard with auto-refresh |
+| `cc serve lsp` | Start Language Server Protocol server |
+
+### Integration & Automation
+
+| Command | Description |
+|---------|-------------|
+| `cc mcp start` | Start MCP server for AI agent integration |
+| `cc mcp setup` | Configure MCP for IDEs (auto-detect) |
+| `cc githook install` | Install git hook for auto-indexing |
+| `cc githook precommit` | Install pre-commit hook for security scanning |
+| `cc bundle export` | Export index as shareable `.ccb` bundle |
+| `cc bundle import <file>` | Import a `.ccb` bundle |
+| `cc bundle info <file>` | Show bundle info without importing |
+| `cc package index <name>` | Index an external package (pip, npm) |
+| `cc jobs list` | List background jobs |
+| `cc completion install` | Install shell completion |
+
+### Shortcuts (Legacy)
+
+These commands still work but show a tip to use the grouped form:
+
+```bash
+cc trace <symbol>      # Tip: use cc analyze trace
+cc wiki                # Tip: use cc ai wiki
+cc ask "question"     # Tip: use cc ai ask
+```
 
 ## How AI Agents Use This
 
@@ -457,16 +516,30 @@ CortexCode respects `.gitignore` files (including nested ones) and has built-in 
 - [x] Native iOS (Swift/SwiftUI/UIKit) framework detection
 - [x] Django / Flask framework detection
 - [x] VS Code Marketplace publishing
+- [x] Interactive graph visualization (`cc generate diagrams --viz`)
+- [x] MCP setup wizard (`cc mcp setup`)
+- [x] Pre-indexed bundles (`.ccb` files)
+- [x] Package indexing (`cc package index`)
+- [x] Background job tracking (`cc jobs`)
+- [x] AI-powered CodeWiki documentation site
+- [x] Natural language code Q&A (`cc ai ask`)
+- [x] Flow tracing & concept analysis (`cc analyze trace`, `cc analyze flow`)
+- [x] Git hook integration (auto-index, pre-commit security scan)
+- [x] Shell completion (bash, zsh, fish, PowerShell)
+- [x] Short CLI alias (`cc`)
+- [x] Grouped CLI commands (`analyze`, `generate`, `serve`, `ai`)
+- [x] Config file (`.cortexcode.yaml`) for project settings
+- [x] Bug detection (pattern matching for security, quality, performance)
+- [x] Project website (Astro + Tailwind, Vercel)
+- [x] Cookbook with practical recipes
 
 ### Future Improvements
 
 #### Features
 - [ ] More language support (Ruby, PHP, C++)
 - [ ] Cloud index for team sharing
-- [ ] Graph visualization for call chains
-- [ ] Auto-indexing on git push
 - [ ] Index versioning (compare across commits)
-- [ ] Config file (`.cortexcode.yaml`) for project settings
+- [ ] Codebase chatbot (conversational Q&A over index)
 
 #### Integrations
 - [ ] JetBrains IDEs plugin (IntelliJ, PyCharm)
@@ -476,12 +549,16 @@ CortexCode respects `.gitignore` files (including nested ones) and has built-in 
 #### AI/Search
 - [ ] Semantic embeddings for meaning-based search
 - [ ] AI-powered code review
-- [ ] Bug detection (pattern matching)
+- [ ] AI-suggested refactoring
 
 #### Performance
 - [ ] Compressed index format
 - [ ] Faster search with caching
 - [ ] Parallel multi-threaded indexing
+
+## Cookbook
+
+See [COOKBOOK.md](COOKBOOK.md) for practical recipes — from first-time setup to CI/CD integration, team collaboration, and advanced workflows.
 
 ## Contributing
 

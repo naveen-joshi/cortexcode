@@ -75,12 +75,15 @@ def generate_html_docs(index: dict[str, Any], output_path: Path, d3_src: str = D
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{project_name} — CortexCode Report</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="{d3_src}"></script>
     <style>{CSS_TEMPLATE}</style>
 </head>
 <body>
     <div class="sidebar">
-        <div class="logo"><div class="logo-icon">C</div> CortexCode</div>
+        <div class="logo"><div class="logo-icon">CC</div> <span class="logo-text">CortexCode</span></div>
         
         <div class="sidebar-stats">
             <div class="sidebar-stat"><div class="sidebar-stat-val">{len(files)}</div><div class="sidebar-stat-lbl">Files</div></div>

@@ -239,3 +239,78 @@ def _check_common_issues(root: Path, results: dict) -> None:
             "severity": "medium",
             "message": "No lockfile (package-lock.json or yarn.lock) — builds may not be reproducible",
         })
+    
+    # Check for common code issues
+    _scan_code_patterns(root, results)
+
+
+# Bug detection patterns for code scanning
+CODE_PATTERNS = [
+    # Security issues
+    (r"eval\s*\(", "high", "Use of eval() — potential code injection"),
+    (r"exec\s*\(", "high", "Use of exec() — potential code injection"),
+    (r"pickle\.loads", "high", "Use of pickle — potential deserialization vulnerability"),
+    (r"yaml\.load\s*\([^,)]*(?<!Loader)", "high", "Unsafe YAML loading — use yaml.safe_load()"),
+    (r"subprocess\.call\s*\(\s*input", "high", "Shell injection via subprocess — sanitize input"),
+    (r"os\.system\s*\(", "high", "Use of os.system() — shell injection risk"),
+    (r"\.format\s*\([^)]*%", "medium", "String formatting with % — consider f-strings"),
+    (r"password\s*=\s*['\"][^'\"]+['\"]", "high", "Hardcoded password detected"),
+    (r"api[_-]?key\s*=\s*['\"][^'\"]+['\"]", "high", "Hardcoded API key detected"),
+    (r"secret\s*=\s*['\"][^'\"]+['\"]", "high", "Hardcoded secret detected"),
+    (r"token\s*=\s*['\"][^'\"]+['\"]", "high", "Hardcoded token detected"),
+    (r"SELECT\s+.*\+.*FROM", "high", "SQL string concatenation — use parameterized queries"),
+    (r"cursor\.execute\s*\(\s*f[\"']", "high", "SQL f-string injection — use parameterized queries"),
+    (r"requests\.get\s*\(\s*f[\"']", "high", "URL injection via f-string — sanitize URLs"),
+    (r"open\s*\(\s*[^,)]*\+", "high", "Path traversal — use os.path.join()"),
+    (r"Path\s*\(\s*[^,)]*\+", "medium", "Path concatenation — use os.path.join()"),
+    
+    # Code quality issues
+    (r"except\s*:", "medium", "Bare except clause — catch specific exceptions"),
+    (r"pass\s*$", "medium", "Empty code block with pass — implement or add TODO"),
+    (r"TODO\s*:", "low", "TODO comment found"),
+    (r"FIXME\s*:", "medium", "FIXME comment found"),
+    (r"print\s*\(", "low", "Debug print statement — remove in production"),
+    (r"import\s+\*\s*$", "medium", "Wildcard import — import specific names"),
+    (r"from\s+\w+\s+import\s+\w+,\s*\w+,\s*\w+,\s*\w+,\s*\w+,\s*\w+", "low", "Many imports on one line — consider line breaks"),
+    
+    # Performance issues
+    (r"for\s+.*\s+in\s+.*:\s*\n\s*for\s+", "medium", "Nested loops — consider optimization"),
+    (r"\.append\s*\(\s*\[", "medium", "Appending list in loop — use list comprehension"),
+    (r"while\s+True\s*:", "medium", "Infinite loop — ensure exit condition"),
+    (r"time\.sleep\s*\(\s*0\s*\)", "low", "time.sleep(0) — unnecessary yield"),
+    
+    # Best practices
+    (r"if\s+__name__\s*==\s*['\"]__main__['\"]:", "low", "Missing main guard"),
+    (r"class\s+\w+.*:\s*\n\s*def\s+__init__", "medium", "Consider dataclass for simple data containers"),
+    (r"@property\s*\n\s*def\s+\w+\s*\(\s*\)\s*:\s*\n\s*return\s+self\.", "low", "Simple property — consider using attribute directly"),
+]
+
+
+def _scan_code_patterns(root: Path, results: dict) -> None:
+    """Scan code files for common bug patterns."""
+    extensions = {".py", ".js", ".ts", ".jsx", ".tsx"}
+    
+    for py_file in root.rglob("*"):
+        if py_file.is_file() and py_file.suffix in extensions:
+            if any(skip in str(py_file) for skip in ("node_modules", ".venv", "venv", "__pycache__", ".git", "dist", "build")):
+                continue
+            
+            try:
+                content = py_file.read_text(encoding="utf-8", errors="ignore")
+                lines = content.splitlines()
+                
+                for pattern, severity, message in CODE_PATTERNS:
+                    import re
+                    matches = re.finditer(pattern, content, re.IGNORECASE | re.MULTILINE)
+                    for match in matches:
+                        line_num = content[:match.start()].count("\n") + 1
+                        # Get line content
+                        line_content = lines[line_num - 1].strip() if line_num <= len(lines) else ""
+                        
+                        results["warnings"].append({
+                            "package": f"{py_file.name}:{line_num}",
+                            "severity": severity,
+                            "message": f"{message}: {line_content[:60]}...",
+                        })
+            except Exception:
+                pass

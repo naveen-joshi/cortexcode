@@ -194,10 +194,10 @@ function initGraph() {{
     graphZoom = d3.zoom().scaleExtent([0.2, 5]).on('zoom', e => graphG.attr('transform', e.transform));
     graphSvg.call(graphZoom);
     
-    graphSvg.append('defs').append('marker').attr('id','arrowhead').attr('viewBox','0 -5 10 10').attr('refX',20).attr('refY',0).attr('markerWidth',6).attr('markerHeight',6).attr('orient','auto').append('path').attr('d','M0,-5L10,0L0,5').attr('fill','#475569');
+    graphSvg.append('defs').append('marker').attr('id','arrowhead').attr('viewBox','0 -5 10 10').attr('refX',20).attr('refY',0).attr('markerWidth',6).attr('markerHeight',6).attr('orient','auto').append('path').attr('d','M0,-5L10,0L0,5').attr('fill','var(--bg4)');
     
     graphLinks = graphG.append('g').selectAll('line').data(links).join('line')
-        .attr('class', 'link').attr('stroke', '#475569').attr('stroke-width', 1).attr('marker-end', 'url(#arrowhead)');
+        .attr('class', 'link').attr('stroke', 'var(--bg4)').attr('stroke-width', 1).attr('marker-end', 'url(#arrowhead)');
     
     const nodeG = graphG.append('g').selectAll('g').data(nodes).join('g')
         .attr('class', 'node').style('cursor', 'pointer');
@@ -208,9 +208,9 @@ function initGraph() {{
         .attr('stroke', '#fff').attr('stroke-width', 1.5);
     
     nodeG.append('text')
-        .text(d => d.id.length > 18 ? d.id.substring(0, 18) + '…' : d.id)
+        .text(d => d.id.length > 16 ? d.id.substring(0, 16) + '…' : d.id)
         .attr('x', d => 8 + Math.min(d.calls + d.calledBy, 15))
-        .attr('y', 4).attr('fill', 'var(--text)').attr('font-size', '11px')
+        .attr('y', 4).attr('font-size', '11px')
         .attr('class', 'node-label');
     
     graphNodes = nodeG;
@@ -239,7 +239,7 @@ function initGraph() {{
         .force('link', d3.forceLink(links).id(d => d.id).distance(70))
         .force('charge', d3.forceManyBody().strength(-150))
         .force('center', d3.forceCenter(W / 2, H / 2))
-        .force('collision', d3.forceCollide().radius(d => 10 + Math.min(d.calls + d.calledBy, 15)));
+        .force('collision', d3.forceCollide().radius(d => 20 + Math.min(d.calls + d.calledBy, 15)));
     
     graphSim.on('tick', () => {{
         graphLinks.attr('x1', d => d.source.x).attr('y1', d => d.source.y).attr('x2', d => d.target.x).attr('y2', d => d.target.y);

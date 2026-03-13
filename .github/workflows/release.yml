@@ -4,12 +4,18 @@ on:
   release:
     types: [published]
   workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version number (e.g., 0.6.0)'
+        required: true
 
 jobs:
   publish-pypi:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -19,10 +25,16 @@ jobs:
       - name: Install build tools
         run: pip install build twine
 
+      - name: Update version in pyproject.toml
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          sed -i 's/version = ".*"/version = "${{ github.event.inputs.version }}"/' pyproject.toml
+
       - name: Build package
         run: python -m build
 
       - name: Publish to PyPI
+        if: secrets.PYPI_API_TOKEN != ''
         env:
           TWINE_USERNAME: __token__
           TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
@@ -30,6 +42,7 @@ jobs:
 
   publish-vscode:
     runs-on: ubuntu-latest
+    if: secrets.VSCE_TOKEN != ''
     steps:
       - uses: actions/checkout@v4
 
@@ -41,6 +54,12 @@ jobs:
       - name: Install VSCE
         run: npm install -g vsce
 
+      - name: Update version in package.json
+        if: github.event_name == 'workflow_dispatch'
+        working-directory: cortexcode-vscode
+        run: |
+          npm version ${{ github.event.inputs.version }} --no-git-tag-version
+
       - name: Build VSIX
         working-directory: cortexcode-vscode
         run: vsce package
@@ -50,3 +69,33 @@ jobs:
           VSCE_TOKEN: ${{ secrets.VSCE_TOKEN }}
         working-directory: cortexcode-vscode
         run: vsce publish
+
+  create-github-release:
+    runs-on: ubuntu-latest
+    needs: [publish-pypi]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Extract changelog for release
+        id: changelog
+        run: |
+          # Get the latest version from CHANGELOG
+          VERSION=$(grep -m1 '^## \[' CHANGELOG.md | sed 's/## \[//;s/\]//')
+          # Extract content between this version and next
+          CONTENT=$(sed -n "/## \[$VERSION\]/,/^## \[/p" CHANGELOG.md | head -n -1 | tail -n +2)
+          # Remove markdown links and clean up
+          CONTENT=$(echo "$CONTENT" | sed 's/\[//g;s/\]//g' | sed 's/(https[^)]*)//g')
+          echo "content=$CONTENT" >> $GITHUB_OUTPUT
+
+      - name: Create GitHub Release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.event.inputs.version }}
+          release_name: CortexCode v${{ github.event.inputs.version }}
+          body: ${{ steps.changelog.outputs.content }}
+          draft: false
+          prerelease: false

@@ -1,0 +1,97 @@
+---
+const ides = [
+  { name: 'VS Code', desc: 'Extension + MCP' },
+  { name: 'Cursor', desc: 'MCP integration' },
+  { name: 'Windsurf', desc: 'MCP integration' },
+  { name: 'Claude Desktop', desc: 'MCP server' },
+  { name: 'Cline', desc: 'MCP server' },
+  { name: 'Gemini CLI', desc: 'MCP server' },
+];
+
+const providers = [
+  { name: 'Google Gemini', default: true },
+  { name: 'OpenAI', default: false },
+  { name: 'Anthropic', default: false },
+  { name: 'Ollama', default: false },
+];
+---
+
+<section id="integrations" class="py-24 bg-surface-900/40">
+  <div class="section-container">
+    <div class="text-center mb-16">
+      <h2 class="text-3xl sm:text-4xl font-bold text-white">
+        Works with your <span class="gradient-text">existing tools</span>
+      </h2>
+      <p class="mt-4 text-gray-400 text-lg max-w-2xl mx-auto">
+        One-command MCP setup for any IDE. Multi-provider AI support for docs and wiki generation.
+      </p>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <!-- IDE Integrations -->
+      <div class="glass-card p-6">
+        <h3 class="text-lg font-semibold text-white mb-1">IDE & Agent Integration</h3>
+        <p class="text-sm text-gray-500 mb-5">Auto-detect and configure with one command</p>
+
+        <div class="glass-card p-4 mb-5 glow-border">
+          <div class="flex items-center gap-2 mb-2">
+            <div class="flex gap-1.5">
+              <span class="w-2.5 h-2.5 rounded-full bg-accent-rose/80"></span>
+              <span class="w-2.5 h-2.5 rounded-full bg-accent-amber/80"></span>
+              <span class="w-2.5 h-2.5 rounded-full bg-accent-green/80"></span>
+            </div>
+            <span class="text-[10px] text-gray-500 font-mono">terminal</span>
+          </div>
+          <pre class="text-xs font-mono"><code><span class="text-gray-500">$</span> <span class="text-brand-300">cc</span> mcp setup
+<span class="text-accent-green">✓</span> Detected: VS Code, Cursor
+<span class="text-accent-green">✓</span> Config written to ~/.cursor/mcp.json
+<span class="text-accent-green">✓</span> Config written to ~/.vscode/mcp.json</code></pre>
+        </div>
+
+        <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          {ides.map(ide => (
+            <div class="flex items-center gap-2 px-3 py-2 rounded-lg bg-surface-700/40 border border-white/[0.04]">
+              <span class="w-2 h-2 rounded-full bg-accent-green"></span>
+              <div>
+                <div class="text-xs font-medium text-white">{ide.name}</div>
+                <div class="text-[10px] text-gray-500">{ide.desc}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <!-- AI Providers -->
+      <div class="glass-card p-6">
+        <h3 class="text-lg font-semibold text-white mb-1">AI Providers</h3>
+        <p class="text-sm text-gray-500 mb-5">For CodeWiki, AI docs, ask, and explain</p>
+
+        <div class="space-y-3 mb-6">
+          {providers.map(p => (
+            <div class={`flex items-center justify-between px-4 py-3 rounded-xl border ${p.default ? 'bg-brand-500/10 border-brand-500/20' : 'bg-surface-700/40 border-white/[0.04]'}`}>
+              <span class={`text-sm font-medium ${p.default ? 'text-brand-300' : 'text-gray-300'}`}>{p.name}</span>
+              {p.default && <span class="text-[10px] px-2 py-0.5 rounded-full bg-brand-500/20 text-brand-300 font-medium">default</span>}
+            </div>
+          ))}
+        </div>
+
+        <div class="glass-card p-4 glow-border">
+          <div class="flex items-center gap-2 mb-2">
+            <div class="flex gap-1.5">
+              <span class="w-2.5 h-2.5 rounded-full bg-accent-rose/80"></span>
+              <span class="w-2.5 h-2.5 rounded-full bg-accent-amber/80"></span>
+              <span class="w-2.5 h-2.5 rounded-full bg-accent-green/80"></span>
+            </div>
+            <span class="text-[10px] text-gray-500 font-mono">terminal</span>
+          </div>
+          <pre class="text-xs font-mono"><code><span class="text-gray-500">$</span> <span class="text-brand-300">cc</span> ai ask <span class="text-accent-amber">"how does auth work?"</span>
+<span class="text-gray-400">Building knowledge pack...</span>
+<span class="text-gray-400">247 symbols, 12 concepts loaded</span>
+
+<span class="text-white">Authentication is handled by...</span>
+<span class="text-gray-500">(1,247 tokens · google/gemini-2.0-flash)</span></code></pre>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

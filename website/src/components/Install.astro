@@ -1,0 +1,70 @@
+---
+---
+
+<section id="install" class="py-24">
+  <div class="section-container">
+    <div class="text-center mb-16">
+      <h2 class="text-3xl sm:text-4xl font-bold text-white">
+        Up and running in <span class="gradient-text">30 seconds</span>
+      </h2>
+      <p class="mt-4 text-gray-400 text-lg max-w-2xl mx-auto">
+        One install, one command. No config files, no databases, no cloud accounts required.
+      </p>
+    </div>
+
+    <div class="max-w-3xl mx-auto">
+      <div class="glass-card glow-border overflow-hidden">
+        <div class="px-5 py-3 border-b border-white/[0.04] flex items-center gap-3">
+          <div class="flex gap-1.5">
+            <span class="w-3 h-3 rounded-full bg-accent-rose/80"></span>
+            <span class="w-3 h-3 rounded-full bg-accent-amber/80"></span>
+            <span class="w-3 h-3 rounded-full bg-accent-green/80"></span>
+          </div>
+          <span class="text-xs text-gray-500 font-mono">getting started</span>
+        </div>
+        <div class="p-6">
+          <pre class="text-sm leading-loose font-mono overflow-x-auto"><code><span class="text-gray-500"># Install from PyPI</span>
+<span class="text-gray-500">$</span> <span class="text-brand-300">pip install</span> cortexcode
+
+<span class="text-gray-500"># Index your project</span>
+<span class="text-gray-500">$</span> <span class="text-brand-300">cd</span> your-project
+<span class="text-gray-500">$</span> <span class="text-brand-300">cc</span> index
+
+<span class="text-gray-500"># See your token savings</span>
+<span class="text-gray-500">$</span> <span class="text-brand-300">cc</span> analyze stats
+
+<span class="text-gray-500"># Get context for AI (500 tokens instead of 200K)</span>
+<span class="text-gray-500">$</span> <span class="text-brand-300">cc</span> analyze context <span class="text-accent-amber">"handleAuth"</span>
+
+<span class="text-gray-500"># Generate interactive docs</span>
+<span class="text-gray-500">$</span> <span class="text-brand-300">cc</span> generate docs <span class="text-gray-400">--open</span>
+
+<span class="text-gray-500"># Ask questions about your code</span>
+<span class="text-gray-500">$</span> <span class="text-brand-300">cc</span> ai ask <span class="text-accent-amber">"how does authentication work?"</span>
+
+<span class="text-gray-500"># Set up MCP for your IDE</span>
+<span class="text-gray-500">$</span> <span class="text-brand-300">cc</span> mcp setup</code></pre>
+        </div>
+      </div>
+
+      <!-- Optional deps -->
+      <div class="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div class="glass-card p-4 text-center">
+          <div class="text-sm font-semibold text-white mb-1">Core</div>
+          <code class="text-xs text-gray-400 font-mono">pip install cortexcode</code>
+          <div class="text-[10px] text-gray-500 mt-1">Indexing, analysis, MCP</div>
+        </div>
+        <div class="glass-card p-4 text-center">
+          <div class="text-sm font-semibold text-white mb-1">+ AI Features</div>
+          <code class="text-xs text-gray-400 font-mono">pip install cortexcode[ai]</code>
+          <div class="text-[10px] text-gray-500 mt-1">Wiki, ask, explain, AI docs</div>
+        </div>
+        <div class="glass-card p-4 text-center">
+          <div class="text-sm font-semibold text-white mb-1">+ Mobile</div>
+          <code class="text-xs text-gray-400 font-mono">pip install cortexcode[mobile]</code>
+          <div class="text-[10px] text-gray-500 mt-1">Kotlin, Swift support</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

@@ -5,7 +5,7 @@ All notable changes to CortexCode will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.6.0] - 2025-03-07
+## [0.6.0] - 2025-03-13
 
 ### Added
 
@@ -16,11 +16,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Concept mapping and concept search ("how does authentication work?")
   - Token tracking per page
   - Supports Google Gemini, OpenAI, Anthropic, and Ollama providers
+- **Interactive Visualization** — `cortexcode diagrams --viz` generates premium dark-mode HTML with glassmorphism, force-directed + hierarchical layouts, click-to-inspect nodes
+- **MCP Setup Wizard** — `cortexcode mcp setup` auto-detects IDEs (VS Code, Cursor, Windsurf, Claude, Cline, RooCode, Gemini CLI, Amazon Q) and creates configs
+- **Pre-indexed Bundles** — `cortexcode bundle export/import/info` for sharing indexes across team as `.ccb` files
+- **Package Indexing** — `cortexcode package index <name>` indexes external packages (pip, npm)
+- **Background Jobs** — `cortexcode jobs list/clear/watch` tracks indexing progress
 - **Ask command** — `cortexcode ask "question"` - Ask natural language questions about your codebase
+- **Flow Tracing** — `cortexcode analyze trace <symbol>` traces code flow through call graph; `cortexcode analyze flow <concept>` groups symbols by file
+- **Git Hook Integration** — `cortexcode githook install/uninstall/precommit` for auto-indexing and security scanning
+- **Shell Completion** — `cortexcode completion install/show/paths` for bash, zsh, fish, PowerShell
+- **Short CLI Alias** — `cc` now works as a shortcut for `cortexcode`
+- **Grouped Commands** — Commands organized into logical groups (`analyze`, `generate`, `serve`, `ai`) with legacy shortcuts still working
+- **Project Website** — Astro + Tailwind CSS site with Vercel deployment (`website/`)
+- **Cookbook** — `COOKBOOK.md` with practical recipes for all common workflows
 - **VSCode extension wiki command** — Added `cortexcode.wiki` command and `/wiki`, `/ask` chat commands
 - **Mermaid diagram rendering** — Fixed rendering in generated wiki with proper SVG output
 
 ### Changed
+
+- **HTML Report Design** — Complete visual overhaul: glassmorphism cards, gradient accents, backdrop blur, JetBrains Mono + Outfit fonts, radial gradient backgrounds, premium dark theme matching viz quality
+- **Graph Label Rendering** — Labels truncated to 16 characters with background rects and increased collision radius to prevent overlaps in both viz and HTML report graphs
 
 - **Default provider** — Changed from OpenAI to Google/Gemini as the default AI provider
 - **Code organization** — Reorganized flat files into subpackages:
