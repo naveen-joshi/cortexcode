@@ -34,15 +34,18 @@ jobs:
         run: python -m build
 
       - name: Publish to PyPI
-        if: secrets.PYPI_API_TOKEN != ''
         env:
           TWINE_USERNAME: __token__
           TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
-        run: twine upload dist/*
+        run: |
+          if [ -n "$TWINE_PASSWORD" ]; then
+            twine upload dist/*
+          else
+            echo "Skipping PyPI publish - no token configured"
+          fi
 
   publish-vscode:
     runs-on: ubuntu-latest
-    if: secrets.VSCE_TOKEN != ''
     steps:
       - uses: actions/checkout@v4
 
@@ -68,7 +71,12 @@ jobs:
         env:
           VSCE_TOKEN: ${{ secrets.VSCE_TOKEN }}
         working-directory: cortexcode-vscode
-        run: vsce publish
+        run: |
+          if [ -n "$VSCE_TOKEN" ]; then
+            vsce publish
+          else
+            echo "Skipping VSCode publish - no token configured"
+          fi
 
   create-github-release:
     runs-on: ubuntu-latest
