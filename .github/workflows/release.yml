@@ -89,21 +89,20 @@ jobs:
       - name: Extract changelog for release
         id: changelog
         run: |
-          # Get the latest version from CHANGELOG
-          VERSION=$(grep -m1 '^## \[' CHANGELOG.md | sed 's/## \[//;s/\]//')
-          # Extract content between this version and next
+          VERSION="${{ github.event.inputs.version }}"
+          if [ -z "$VERSION" ]; then
+            VERSION=$(grep -m1 '^## \[' CHANGELOG.md | sed 's/## \[//;s/\]//')
+          fi
           CONTENT=$(sed -n "/## \[$VERSION\]/,/^## \[/p" CHANGELOG.md | head -n -1 | tail -n +2)
-          # Remove markdown links and clean up
           CONTENT=$(echo "$CONTENT" | sed 's/\[//g;s/\]//g' | sed 's/(https[^)]*)//g')
-          echo "content=$CONTENT" >> $GITHUB_OUTPUT
+          echo "content<<EOF" >> $GITHUB_OUTPUT
+          echo "$CONTENT" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
 
       - name: Create GitHub Release
-        uses: actions/create-release@v1
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: ${{ github.event.inputs.version }}
-          release_name: CortexCode v${{ github.event.inputs.version }}
-          body: ${{ steps.changelog.outputs.content }}
-          draft: false
-          prerelease: false
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create ${{ github.event.inputs.version }} \
+            --title "CortexCode v${{ github.event.inputs.version }}" \
+            --notes "${{ steps.changelog.outputs.content }}"
