@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "cortexcode"
-version = "0.7.0"
+version = "0.9.0"
 description = "Lightweight code indexing for AI assistants — save 90%+ tokens with structured context"
 readme = "README.md"
 requires-python = ">=3.10"
