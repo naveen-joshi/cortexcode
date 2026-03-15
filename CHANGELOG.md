@@ -5,6 +5,43 @@ All notable changes to CortexCode will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.0] - 2025-03-15
+
+### Added
+
+- **Post-Index Wizard** — Interactive wizard that runs after `cortexcode index` to guide users through generating outputs
+  - Multi-select checkbox for docs, diagrams, AI docs, CodeWiki, reports, visualization, dashboard, MCP setup
+  - Grouped options: Core outputs, AI-powered, Setup
+  - Smart recommendations based on detected project shape (routes, entities, symbol count)
+  - Follow-up prompts for diagram types, AI doc types, wiki options, browser opening, dashboard port
+  - Preference persistence in `~/.cortexcode/config.json`
+  - "Show wizard next time" toggle to enable/disable automatic prompting
+
+- **CLI Flags for Wizard**
+  - `--no-post-index-wizard` — Skip the interactive post-index generation wizard
+  - `--force-wizard` — Force showing the post-index wizard even in non-TTY mode
+
+- **Enhanced MCP Setup** — Updated IDE configurations with correct MCP server formats:
+  - VS Code / Cursor: uses `servers` key with `["mcp", "start"]` args
+  - Windsurf, Cline, RooCode, Antigravity: uses `mcpServers` key
+  - Claude Code: CLI command `claude mcp add cortexcode stdio -- cortexcode mcp start`
+  - OpenCode: uses `mcp` key with `type: local`
+
+- **Project Profile Detection** — Enhanced project shape detection showing:
+  - Architecture layers (core, cli, data, api)
+  - Runtime surface (routes, entities)
+  - Recommended reports and diagrams based on project type
+
+### Changed
+
+- **Default AI Provider** — Google/Gemini remains the default (from 0.6.0)
+- **Wizard TTY Detection** — Now checks for interactive terminal and respects saved preferences
+
+### Fixed
+
+- **Wizard not showing in non-TTY** — Added `--force-wizard` flag to bypass TTY check
+- **Missing index_data in wizard** — Fixed call site to pass indexed project data for recommendations
+
 ## [0.6.0] - 2025-03-13
 
 ### Added

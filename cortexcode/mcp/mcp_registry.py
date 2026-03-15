@@ -17,7 +17,7 @@ TOOL_DEFINITIONS = [
     },
     {
         "name": "cortexcode_context",
-        "description": "USE THIS when you need to understand how a function/class works, see its implementation, or see what it calls/who calls it. Also use when user asks 'how does X work' or 'show me the code for X'.",
+        "description": "USE THIS when you need to understand how a function/class works, see its implementation, or see what it calls/who calls it. Also use when user asks 'how does X work' or 'show me the code for X'. Returns ACTUAL CODE SNIPPETS from the index - no need to read files separately. This saves tokens and time.",
         "inputSchema": {
             "type": "object",
             "properties": {

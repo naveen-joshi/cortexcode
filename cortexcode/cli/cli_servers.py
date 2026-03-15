@@ -1,6 +1,7 @@
 import json
 import os
 import shutil
+import platform
 from pathlib import Path
 
 from rich.console import Console
@@ -10,45 +11,67 @@ from rich.prompt import Prompt
 IDE_CONFIGS = {
     "vscode": {
         "name": "VS Code",
-        "file": ".vscode/settings.json",
-        "config": {"mcpServers": {"cortexcode": {"command": "cortexcode", "args": ["mcp"], "disabled": False}}},
+        "file": ".vscode/mcp.json",
+        "global_file": "~/.vscode/mcp.json",
+        "config": {"servers": {"cortexcode": {"command": "cortexcode", "args": ["mcp", "start"]}}},
     },
     "cursor": {
         "name": "Cursor",
-        "file": ".cursor/settings.json",
-        "config": {"mcpServers": {"cortexcode": {"command": "cortexcode", "args": ["mcp"], "disabled": False}}},
+        "file": ".cursor/mcp.json",
+        "global_file": "~/.cursor/mcp.json",
+        "config": {"servers": {"cortexcode": {"command": "cortexcode", "args": ["mcp", "start"]}}},
     },
     "windsurf": {
         "name": "Windsurf",
-        "file": ".windsurf/config.json",
-        "config": {"mcpServers": {"cortexcode": {"command": "cortexcode", "args": ["mcp"], "disabled": False}}},
+        "file": ".codeium/windsurf/mcp_config.json",
+        "global_file": "~/.codeium/windsurf/mcp_config.json",
+        "config": {"mcpServers": {"cortexcode": {"command": "cortexcode", "args": ["mcp", "start"]}}},
     },
     "claude": {
-        "name": "Claude Desktop",
-        "file": "claude_desktop_config.json",
-        "config": {"mcpServers": {"cortexcode": {"command": "cortexcode", "args": ["mcp"], "disabled": False}}},
+        "name": "Claude Code",
+        "file": None,
+        "global_file": None,
+        "config": None,
+        "cli_command": "claude mcp add cortexcode stdio -- cortexcode mcp start",
     },
     "cline": {
         "name": "Cline",
-        "file": ".cline/settings.json",
-        "config": {"mcpServers": {"cortexcode": {"command": "cortexcode", "args": ["mcp"], "disabled": False}}},
+        "file": ".cline/mcp.json",
+        "global_file": "~/.cline/mcp.json",
+        "config": {"mcpServers": {"cortexcode": {"command": "cortexcode", "args": ["mcp", "start"]}}},
     },
     "roocode": {
         "name": "RooCode",
-        "file": ".roocode/settings.json",
-        "config": {"mcpServers": {"cortexcode": {"command": "cortexcode", "args": ["mcp"], "disabled": False}}},
+        "file": ".roocode/mcp.json",
+        "global_file": "~/.roocode/mcp.json",
+        "config": {"mcpServers": {"cortexcode": {"command": "cortexcode", "args": ["mcp", "start"]}}},
     },
-    "gemini": {
-        "name": "Gemini CLI",
-        "file": ".gemini/settings.json",
-        "config": {"mcpServers": {"cortexcode": {"command": "cortexcode", "args": ["mcp"], "disabled": False}}},
+    "opencode": {
+        "name": "OpenCode",
+        "file": "opencode.json",
+        "global_file": "~/.opencode/opencode.json",
+        "config": {"mcp": {"cortexcode": {"type": "local", "command": ["cortexcode", "mcp", "start"], "enabled": True}}},
     },
-    "amazonq": {
-        "name": "Amazon Q Developer",
-        "file": ".aws/amazonq/settings.json",
-        "config": {"mcpServers": {"cortexcode": {"command": "cortexcode", "args": ["mcp"], "disabled": False}}},
+    "antigravity": {
+        "name": "Antigravity",
+        "file": ".antigravity/mcp.json",
+        "global_file": "~/.antigravity/mcp.json",
+        "config": {"mcpServers": {"cortexcode": {"command": "cortexcode", "args": ["mcp", "start"]}}},
     },
 }
+
+
+def get_claude_config_path() -> Path:
+    """Get Claude Desktop config path based on OS."""
+    home = Path.home()
+    system = platform.system()
+    
+    if system == "Windows":
+        return home / "AppData" / "Roaming" / "Claude" / "claude_desktop_config.json"
+    elif system == "Darwin":  # macOS
+        return home / "Library" / "Application Support" / "Claude" / "claude_desktop_config.json"
+    else:  # Linux
+        return home / ".config" / "Claude" / "claude_desktop_config.json"
 
 
 def detect_ide() -> list[str]:
@@ -56,22 +79,35 @@ def detect_ide() -> list[str]:
     detected = []
     home = Path.home()
     
-    if (home / ".vscode/settings.json").exists():
+    # VS Code / Cursor mcp.json
+    if (home / ".vscode/mcp.json").exists() or (Path.cwd() / ".vscode/mcp.json").exists():
         detected.append("vscode")
-    if (home / ".cursor/settings.json").exists():
+    if (home / ".cursor/mcp.json").exists():
         detected.append("cursor")
-    if (home / ".windsurf/config.json").exists():
+    
+    # Windsurf
+    if (home / ".codeium/windsurf/mcp_config.json").exists():
         detected.append("windsurf")
-    if (home / "AppData/Roaming/Claude/settings.json").exists() or (home / ".claude/settings.json").exists():
+    
+    # Claude Desktop
+    if get_claude_config_path().exists():
         detected.append("claude")
-    if (home / ".cline/settings.json").exists():
+    
+    # Cline
+    if (home / ".cline/mcp.json").exists():
         detected.append("cline")
-    if (home / ".roocode/settings.json").exists():
+    
+    # RooCode
+    if (home / ".roocode/mcp.json").exists():
         detected.append("roocode")
-    if (home / ".gemini/settings.json").exists():
-        detected.append("gemini")
-    if (home / ".aws/amazonq/settings.json").exists():
-        detected.append("amazonq")
+    
+    # OpenCode
+    if (Path.cwd() / "opencode.json").exists() or (home / ".opencode/opencode.json").exists():
+        detected.append("opencode")
+    
+    # Antigravity
+    if (home / ".antigravity/mcp.json").exists():
+        detected.append("antigravity")
     
     return detected
 
@@ -112,12 +148,36 @@ def handle_mcp_setup(console: Console) -> None:
         return
     
     for target in targets:
+        ide = IDE_CONFIGS.get(target)
+        
+        if target == "claude":
+            console.print(f"\n[yellow]Claude Code:[/yellow] Run this command manually:")
+            console.print(f"  [cyan]{ide.get('cli_command')}[/cyan]")
+            console.print("[dim]Then restart Claude Code[/dim]")
+            continue
+        
+        if target == "opencode":
+            config_path = Path.cwd() / ide["file"]
+            config_path.parent.mkdir(parents=True, exist_ok=True)
+            
+            existing = {}
+            if config_path.exists():
+                try:
+                    existing = json.loads(config_path.read_text())
+                except:
+                    pass
+            
+            if "mcp" not in existing:
+                existing["mcp"] = {}
+            existing["mcp"]["cortexcode"] = ide["config"]["mcp"]["cortexcode"]
+            
+            config_path.write_text(json.dumps(existing, indent=2))
+            console.print(f"[green]✓[/green] Updated {config_path}")
+            continue
+        
         if target.startswith("custom:"):
             config_path = Path(target.split(":", 1)[1])
         else:
-            ide = IDE_CONFIGS.get(target)
-            if not ide:
-                continue
             config_path = Path.cwd() / ide["file"]
         
         config_path.parent.mkdir(parents=True, exist_ok=True)
@@ -129,15 +189,18 @@ def handle_mcp_setup(console: Console) -> None:
             except:
                 pass
         
-        mcp_key = "mcpServers"
+        # VS Code/Cursor use "servers", others use "mcpServers"
+        if target in ("vscode", "cursor"):
+            mcp_key = "servers"
+        else:
+            mcp_key = "mcpServers"
+        
         if mcp_key not in existing:
             existing[mcp_key] = {}
         
         existing[mcp_key]["cortexcode"] = {
             "command": "cortexcode",
             "args": ["mcp"],
-            "disabled": False,
-            "alwaysAllow": [],
         }
         
         config_path.write_text(json.dumps(existing, indent=2))

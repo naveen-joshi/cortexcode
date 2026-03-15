@@ -65,6 +65,22 @@ cortexcode context "handleAuth"
 cortexcode docs --open
 ```
 
+### Post-Index Wizard
+
+After running `cortexcode index`, an interactive wizard can guide you through generating outputs:
+
+```bash
+cortexcode index              # Run index, then wizard prompts
+cortexcode index --force-wizard   # Force wizard in non-TTY mode
+cortexcode index --no-post-index-wizard  # Skip wizard
+```
+
+**Wizard features:**
+- Multi-select checkbox for docs, diagrams, AI docs, CodeWiki, reports, visualization, dashboard, MCP setup
+- Smart recommendations based on detected project shape
+- Follow-up prompts for diagram types, AI doc types, wiki options
+- Preference persistence — saves your choices for future runs
+
 ## Features
 
 ### Multi-Language AST Indexing

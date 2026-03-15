@@ -15,16 +15,17 @@ def get_context(index_path: Path, query: str | None = None, num_results: int = 5
         num_results: Number of results to return
 
     Returns:
-        Dictionary with relevant symbols and their relationships
+        Dictionary with relevant symbols and their code snippets
     """
     index = json.loads(index_path.read_text(encoding="utf-8"))
 
     files = index.get("files", {})
     call_graph = index.get("call_graph", {})
     file_deps = index.get("file_dependencies", {})
+    source_code = index.get("source_code", {})
 
     if not query:
-        return _get_all_symbols(files, call_graph, num_results)
+        return _get_all_symbols(files, call_graph, source_code, num_results)
 
     file_filter = None
     query_lower = query.lower()
@@ -44,11 +45,11 @@ def get_context(index_path: Path, query: str | None = None, num_results: int = 5
 
         for sym in symbols:
             if file_filter and not query_lower:
-                results.append(_build_symbol_result(sym, rel_path, call_graph))
+                results.append(_build_symbol_result(sym, rel_path, call_graph, source_code))
                 continue
 
             if _matches_query(sym, query_lower):
-                results.append(_build_symbol_result(sym, rel_path, call_graph))
+                results.append(_build_symbol_result(sym, rel_path, call_graph, source_code))
 
         if query_lower:
             for imp in imports:
@@ -79,8 +80,8 @@ def get_context(index_path: Path, query: str | None = None, num_results: int = 5
     return response
 
 
-def _build_symbol_result(sym: dict, rel_path: str, call_graph: dict) -> dict:
-    """Build a context result dict for a symbol."""
+def _build_symbol_result(sym: dict, rel_path: str, call_graph: dict, source_code: dict) -> dict:
+    """Build a context result dict for a symbol with actual code."""
     result = {
         "name": sym.get("name"),
         "type": sym.get("type"),
@@ -91,6 +92,11 @@ def _build_symbol_result(sym: dict, rel_path: str, call_graph: dict) -> dict:
         "class": sym.get("class"),
         "framework": sym.get("framework"),
     }
+
+    # Add actual code snippet from source_code - look up by symbol name + type
+    code = _get_symbol_code(sym.get("name"), sym.get("type"), rel_path, source_code)
+    if code:
+        result["code"] = code
 
     if sym.get("return_type"):
         result["return_type"] = sym["return_type"]
@@ -105,7 +111,29 @@ def _build_symbol_result(sym: dict, rel_path: str, call_graph: dict) -> dict:
     return result
 
 
-def _get_all_symbols(files: dict, call_graph: dict, limit: int) -> dict[str, Any]:
+def _get_symbol_code(sym_name: str, sym_type: str, rel_path: str, source_code: dict) -> str | None:
+    """Get the actual code snippet for a symbol from source_code storage."""
+    if not source_code or not sym_name:
+        return None
+
+    # Try to find by symbol name + type key first
+    key = f"{sym_name}:{sym_type}"
+    if key in source_code:
+        file_data = source_code[key].get(rel_path)
+        if file_data:
+            return file_data.get("body")
+    
+    # Fallback: search through all keys for this symbol name
+    for code_key, files in source_code.items():
+        if code_key.startswith(f"{sym_name}:"):
+            file_data = files.get(rel_path)
+            if file_data:
+                return file_data.get("body")
+    
+    return None
+
+
+def _get_all_symbols(files: dict, call_graph: dict, source_code: dict, limit: int) -> dict[str, Any]:
     """Get all symbols, limited."""
     all_symbols = []
 

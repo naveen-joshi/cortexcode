@@ -494,7 +494,9 @@ def serve_lsp():
 @click.option("-I", "--include", multiple=True, help="Patterns to include, e.g., 'apps/*', 'packages/*'")
 @click.option("-r", "--root", default=None, help="Monorepo root (for nx-style projects)")
 @click.option("-n", "--dry-run", is_flag=True, help="Preview what would be indexed without indexing")
-def index(path, output, verbose, watch, incremental, include_tests, exclude, include, root, dry_run):
+@click.option("--no-post-index-wizard", is_flag=True, help="Skip the interactive post-index generation wizard")
+@click.option("--force-wizard", is_flag=True, help="Force showing the post-index wizard even in non-TTY mode")
+def index(path, output, verbose, watch, incremental, include_tests, exclude, include, root, dry_run, no_post_index_wizard, force_wizard):
     """Index a directory and save the code graph."""
     handle_index_command(
         console,
@@ -508,6 +510,8 @@ def index(path, output, verbose, watch, incremental, include_tests, exclude, inc
         include,
         root,
         dry_run,
+        no_post_index_wizard,
+        force_wizard,
         indexer,
         print_index_header_renderer,
         print_project_profile_summary_renderer,

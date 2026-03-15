@@ -45,6 +45,7 @@ class CodeIndexer(IndexerExtractorMixin):
         self.symbols: list[dict[str, Any]] = []
         self.call_graph: dict[str, list[str]] = {}
         self.file_symbols: dict[str, list[dict[str, Any]]] = {}
+        self.source_code: dict[str, dict] = {}  # Store source code lines for context
         self.gitignore_patterns: list[tuple[str, bool]] = []
         
         # Filter options
@@ -85,6 +86,7 @@ class CodeIndexer(IndexerExtractorMixin):
         self.symbols = session["symbols"]
         self.call_graph = session["call_graph"]
         self.file_symbols = session["file_symbols"]
+        self.source_code = session.get("source_code", {})
         self.parsers = session["parsers"]
         
         self._load_gitignore(root_path)
@@ -153,6 +155,10 @@ class CodeIndexer(IndexerExtractorMixin):
     
     def _index_file(self, file_path: Path, root: Path) -> None:
         """Index a single file."""
+        rel_path = file_path.relative_to(root)
+        rel_str = str(rel_path)
+        
+        # First, run the actual indexing to get symbol positions
         result = index_file(
             file_path,
             root,
@@ -171,6 +177,41 @@ class CodeIndexer(IndexerExtractorMixin):
             return
 
         rel_path, file_data, symbols = result
+        
+        # Load full file content to extract complete function bodies
+        try:
+            content = file_path.read_text(encoding="utf-8", errors="ignore")
+            lines = content.split("\n")
+            
+            # Store full function bodies for each symbol
+            for sym in symbols:
+                sym_line = sym.get("line", 1)
+                sym_name = sym.get("name", "")
+                sym_type = sym.get("type", "")
+                
+                # Find the end of this symbol (next symbol or end of file)
+                end_line = len(lines)
+                for other_sym in symbols:
+                    other_line = other_sym.get("line", 1)
+                    if other_line > sym_line and (end_line == len(lines) or other_line < end_line):
+                        end_line = other_line - 1
+                
+                # Extract full body (with some context before)
+                start_line = max(1, sym_line - 2)
+                body_lines = lines[start_line-1:end_line]
+                body = "\n".join(body_lines)
+                
+                # Store with key: "symbol_name:type" for quick lookup
+                key = f"{sym_name}:{sym_type}"
+                if key not in self.source_code:
+                    self.source_code[key] = {}
+                self.source_code[key][rel_str] = {
+                    "line": sym_line,
+                    "body": body
+                }
+        except Exception:
+            pass
+        
         merge_indexed_file(
             rel_path,
             file_data,
@@ -182,7 +223,7 @@ class CodeIndexer(IndexerExtractorMixin):
     
     def _build_index(self, root: Path) -> dict[str, Any]:
         """Build the final index structure."""
-        return build_index_result(
+        result = build_index_result(
             root=root,
             file_symbols=self.file_symbols,
             call_graph=self.call_graph,
@@ -195,6 +236,9 @@ class CodeIndexer(IndexerExtractorMixin):
             regex_languages=REGEX_LANGUAGES,
             plugin_registry=plugin_registry,
         )
+        # Add source code for context retrieval
+        result["source_code"] = self.source_code
+        return result
 
 
 def index_directory(path: str | Path, incremental: bool = False, filter_opts: dict[str, Any] | None = None) -> dict[str, Any]:
