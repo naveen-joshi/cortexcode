@@ -23,12 +23,21 @@ jobs:
           python-version: "3.11"
 
       - name: Install build tools
-        run: pip install build twine
+        run: pip install build twine toml
 
       - name: Update version in pyproject.toml
         if: github.event_name == 'workflow_dispatch'
         run: |
-          sed -i 's/version = ".*"/version = "${{ github.event.inputs.version }}"/' pyproject.toml
+          python -c "
+          import toml
+          import sys
+          with open('pyproject.toml', 'r') as f:
+              data = toml.load(f)
+          data['project']['version'] = '${{ github.event.inputs.version }}'
+          with open('pyproject.toml', 'w') as f:
+              toml.dump(data, f)
+          print(f'Updated version to ${{ github.event.inputs.version }}')
+          "
 
       - name: Build package
         run: python -m build
