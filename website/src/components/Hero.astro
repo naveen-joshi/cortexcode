@@ -16,19 +16,19 @@
         class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-brand-500/10 border border-brand-500/20 text-brand-300 text-sm hover:bg-brand-500/15 transition-colors"
       >
         <span class="w-2 h-2 rounded-full bg-accent-green animate-pulse"></span>
-        v0.6.0 — Now with CodeWiki &amp; Flow Tracing
+        v0.9.1 — CodeWiki, flow tracing, and post-index workflows
       </a>
     </div>
 
     <!-- Headline -->
     <h1 class="text-center text-5xl sm:text-6xl lg:text-7xl font-extrabold leading-tight tracking-tight">
-      <span class="text-white">Stop wasting tokens.</span><br />
-      <span class="gradient-text">Index your code.</span>
+      <span class="text-white">Understand your codebase.</span><br />
+      <span class="gradient-text">Build a searchable codegraph.</span>
     </h1>
 
     <p class="mt-6 text-center text-lg sm:text-xl text-gray-400 max-w-3xl mx-auto leading-relaxed">
-      CortexCode uses <strong class="text-gray-200">AST parsing</strong> to create a structured index of your codebase.
-      Give AI assistants <strong class="text-gray-200">500 tokens</strong> of context instead of <strong class="text-gray-200">200,000</strong>.
+      CortexCode uses <strong class="text-gray-200">AST parsing</strong> to build a structured codegraph of your codebase.
+      Explore symbols, trace flows, generate docs and diagrams, produce CodeWiki pages, and connect AI tools through MCP.
     </p>
 
     <!-- CTA buttons -->
@@ -51,7 +51,7 @@
       </a>
     </div>
 
-    <!-- Token savings visual -->
+    <!-- Product visual -->
     <div class="mt-16 max-w-2xl mx-auto">
       <div class="glass-card glow-border p-6">
         <div class="flex items-center gap-3 mb-4">
@@ -62,17 +62,15 @@
           </div>
           <span class="text-xs text-gray-500 font-mono">terminal</span>
         </div>
-        <pre class="text-sm leading-relaxed font-mono overflow-x-auto"><code><span class="text-gray-500">$</span> <span class="text-brand-300">cc</span> stats
+        <pre class="text-sm leading-relaxed font-mono overflow-x-auto"><code><span class="text-gray-500">$</span> <span class="text-brand-300">cc</span> index
 
-<span class="text-brand-400">╭──────── Token Savings Analysis ────────╮</span>
-<span class="text-brand-400">│</span> Source files         <span class="text-white">154 files</span>          <span class="text-brand-400">│</span>
-<span class="text-brand-400">│</span> Raw project tokens   <span class="text-accent-rose">203,847</span>            <span class="text-brand-400">│</span>
-<span class="text-brand-400">│</span> Full index tokens    <span class="text-accent-amber">45,291</span>             <span class="text-brand-400">│</span>
-<span class="text-brand-400">│</span> Context query tokens <span class="text-accent-green">487</span>                <span class="text-brand-400">│</span>
+<span class="text-brand-400">╭──────────── Indexed Project ───────────╮</span>
+<span class="text-brand-400">│</span> Files               <span class="text-white">166</span>                <span class="text-brand-400">│</span>
+<span class="text-brand-400">│</span> Symbols             <span class="text-accent-amber">722</span>                <span class="text-brand-400">│</span>
+<span class="text-brand-400">│</span> Languages           <span class="text-accent-green">py, ts, js</span>          <span class="text-brand-400">│</span>
 <span class="text-brand-400">│</span>                                         <span class="text-brand-400">│</span>
-<span class="text-brand-400">│</span> Tokens saved         <span class="text-white font-bold">203,360</span>            <span class="text-brand-400">│</span>
-<span class="text-brand-400">│</span> Savings              <span class="text-accent-green font-bold">99.8%</span>              <span class="text-brand-400">│</span>
-<span class="text-brand-400">│</span> Compression ratio    <span class="text-accent-green font-bold">418.6x</span>             <span class="text-brand-400">│</span>
+<span class="text-brand-400">│</span> Suggested reports   <span class="text-white">overview, tech</span>     <span class="text-brand-400">│</span>
+<span class="text-brand-400">│</span> Suggested diagrams  <span class="text-white">architecture, flow</span> <span class="text-brand-400">│</span>
 <span class="text-brand-400">╰─────────────────────────────────────────╯</span></code></pre>
       </div>
     </div>

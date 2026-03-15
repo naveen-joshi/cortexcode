@@ -2,16 +2,8 @@
   <h1 align="center">CortexCode</h1>
   <p align="center">
     <strong>Lightweight code indexing for AI assistants</strong><br>
-    Save 90%+ tokens by giving AI agents structured context instead of raw source files.
+    Build a searchable codegraph, generate documentation, and give AI assistants grounded context.
   </p>
-</p>
-
-<p align="center">
-  <a href="https://pypi.org/project/cortexcode/"><img src="https://img.shields.io/pypi/v/cortexcode?style=flat-square&color=blue" alt="PyPI"></a>
-  <a href="https://pypi.org/project/cortexcode/"><img src="https://img.shields.io/pypi/pyversions/cortexcode?style=flat-square" alt="Python"></a>
-  <a href="https://github.com/naveen-joshi/cortexcode/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-green?style=flat-square" alt="License"></a>
-  <a href="https://github.com/naveen-joshi/cortexcode"><img src="https://img.shields.io/github/stars/naveen-joshi/cortexcode?style=flat-square" alt="Stars"></a>
-  <a href="https://marketplace.visualstudio.com/items?itemName=cortexcode.cortexcode-vscode"><img src="https://img.shields.io/visual-studio-marketplace/v/cortexcode.cortexcode-vscode?style=flat-square" alt="VS Code"></a>
 </p>
 
 ---
@@ -20,26 +12,26 @@
 
 AI coding assistants (Copilot, Cursor, Windsurf, etc.) need to understand your codebase. The current approach: **dump entire source files into the context window**. This is:
 
-- **Expensive** — A 150-file project can cost 200K+ tokens per query
-- **Slow** — More tokens = slower responses
-- **Wasteful** — Most of those tokens are irrelevant to the question
+- **Noisy** — Important signals are buried inside large files
+- **Fragile** — Assistants miss architecture, relationships, and runtime surface area
+- **Hard to reuse** — Raw file dumps do not become a durable project map
 
 ## The Solution
 
-CortexCode indexes your codebase using **AST parsing** (tree-sitter) and provides a structured, searchable index. Instead of feeding 200K tokens of raw code, you feed **~500 tokens of relevant context**.
+CortexCode indexes your codebase using **AST parsing** (tree-sitter) and builds a structured, searchable codegraph. You can explore symbols, trace flows, generate docs and diagrams, produce CodeWiki pages, and connect AI tools through MCP.
 
 ```
 ┌─────────────────────────────────────────────────┐
 │  Without CortexCode          With CortexCode    │
 │                                                  │
-│  200,000 tokens    →         500 tokens          │
-│  $0.006/query      →         $0.00002/query      │
-│  All files dumped  →         Only relevant syms  │
-│  No structure      →         Call graph + types   │
+│  Raw files only    →         Searchable codegraph │
+│  Manual digging    →         Linked symbols       │
+│  Ad-hoc prompts    →         Reusable context     │
+│  No project map    →         Docs + diagrams      │
 └─────────────────────────────────────────────────┘
 ```
 
-Run `cortexcode stats` on your project to see your actual savings.
+Run `cortexcode index` on your project to generate the codegraph and start exploring.
 
 ## Quick Start
 
@@ -54,9 +46,6 @@ cd cortexcode && pip install -e .
 # Index your project
 cd your-project
 cortexcode index
-
-# See token savings
-cortexcode stats
 
 # Get context for AI
 cortexcode context "handleAuth"
@@ -106,24 +95,14 @@ Parses source code into structured symbols using tree-sitter grammars.
 - **Entities** — Database models and ORM definitions
 - **Framework Detection** — React components, Angular services, etc.
 
-### Token Savings
+### Project Exploration & Context
 
-CortexCode dramatically reduces the tokens needed to give AI assistants useful context:
+Use CortexCode to inspect structure and answer practical questions about a codebase:
 
-```bash
-$ cortexcode stats
-
-╭──────── Token Savings Analysis ────────╮
-│ Source files         154 files          │
-│ Raw project tokens   203,847            │
-│ Full index tokens    45,291             │
-│ Context query tokens 487                │
-│                                         │
-│ Tokens saved         203,360            │
-│ Savings              99.8%              │
-│ Compression ratio    418.6x             │
-╰─────────────────────────────────────────╯
-```
+- **Context lookup** — Pull relevant symbols and files for a query
+- **Call graph tracing** — Follow how behavior moves across modules
+- **Architecture visibility** — Inspect routes, entities, dependencies, and layers
+- **Reusable index** — Keep a structured project map that tools can build on
 
 ### Interactive HTML Documentation
 
@@ -158,7 +137,6 @@ cortexcode wiki --no-modules       # Skip per-module pages (faster)
 - **Mermaid diagrams** — Auto-generated flow diagrams
 - **Concept mapping** — Maps technical concepts to symbols and files
 - **Concept search** — Ask "how does authentication work?" and get grounded answers
-- **Token tracking** — See exactly how many tokens each page used
 
 **Output:** `.cortexcode/wiki/index.html` — Open directly or serve locally.
 
@@ -209,12 +187,12 @@ CortexCode supports both a short form (`cc`) and full form (`cortexcode`). Comma
 | Command | Description |
 |---------|-------------|
 | `cc analyze context [query]` | Get relevant context for AI |
-| `cc analyze context [query] --tokens` | Show token savings for query |
+| `cc analyze context [query] --tokens` | Show context size estimates for a query |
 | `cc analyze search [query]` | Grep-like symbol search with type/file filters |
 | `cc analyze find [query]` | Semantic search by meaning ("auth handler") |
 | `cc analyze diff` | Show changed symbols since last commit |
 | `cc analyze diff --ref HEAD~3` | Compare against any git ref |
-| `cc analyze stats` | Show project stats and token savings |
+| `cc analyze stats` | Show project index and analysis stats |
 | `cc analyze scan` | Scan dependencies for security warnings |
 | `cc analyze trace <symbol>` | Trace code flow through call graph |
 | `cc analyze flow <concept>` | Analyze code flow grouped by file |
@@ -319,7 +297,7 @@ Add to `~/.windsurf/config.json`:
 
 ```bash
 # Paste this output into your AI chat
-cortexcode context "useAuth" --tokens
+cortexcode context "useAuth"
 ```
 
 ### 2. JSON Index (programmatic)
@@ -516,7 +494,6 @@ CortexCode respects `.gitignore` files (including nested ones) and has built-in 
 ## Roadmap
 
 - [x] MCP server for direct AI agent integration
-- [x] Tiktoken-based accurate token counting
 - [x] Semantic search over symbols (TF-IDF + synonym expansion)
 - [x] Cross-file type inference
 - [x] Git diff-aware context (show only changed symbols)

@@ -60,7 +60,7 @@ class AIDocGenerator:
             messages = prompts.generate_project_overview_prompt(index_data)
             output.overview = self._generate(messages, "overview")
             if output.overview:
-                (output_dir / "AI_OVERVIEW.md").write_text(output.overview)
+                (output_dir / "AI_OVERVIEW.md").write_text(output.overview, encoding="utf-8")
                 print("  -> AI_OVERVIEW.md")
         
         if "api" in docs:
@@ -68,7 +68,7 @@ class AIDocGenerator:
             messages = prompts.generate_api_docs_prompt(index_data)
             output.api_docs = self._generate(messages, "api")
             if output.api_docs:
-                (output_dir / "AI_API.md").write_text(output.api_docs)
+                (output_dir / "AI_API.md").write_text(output.api_docs, encoding="utf-8")
                 print("  -> AI_API.md")
         
         if "architecture" in docs:
@@ -76,7 +76,7 @@ class AIDocGenerator:
             messages = prompts.generate_architecture_prompt(index_data)
             output.architecture = self._generate(messages, "architecture")
             if output.architecture:
-                (output_dir / "AI_ARCHITECTURE.md").write_text(output.architecture)
+                (output_dir / "AI_ARCHITECTURE.md").write_text(output.architecture, encoding="utf-8")
                 print("  -> AI_ARCHITECTURE.md")
         
         if "flows" in docs:
@@ -84,7 +84,7 @@ class AIDocGenerator:
             messages = prompts.generate_flow_docs_prompt(index_data)
             output.flows = self._generate(messages, "flows")
             if output.flows:
-                (output_dir / "AI_FLOWS.md").write_text(output.flows)
+                (output_dir / "AI_FLOWS.md").write_text(output.flows, encoding="utf-8")
                 print("  -> AI_FLOWS.md")
         
         return output
@@ -107,7 +107,7 @@ class AIDocGenerator:
         result = self._generate(messages, f"module_{module_name}")
         
         if output_path and result:
-            Path(output_path).write_text(result)
+            Path(output_path).write_text(result, encoding="utf-8")
         
         return result
 
