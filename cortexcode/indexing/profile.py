@@ -1,6 +1,8 @@
 from pathlib import Path
 from typing import Any
 
+from .nx_projects import nx_framework_from_executor
+
 
 FRONTEND_FRAMEWORKS = {"react", "react-native", "nextjs", "angular", "expo", "flutter", "swiftui", "uikit", "remix"}
 
@@ -210,6 +212,15 @@ def build_project_profile(
                 framework_counts[normalized_framework] = framework_counts.get(normalized_framework, 0) + 1
 
         entry_points.extend(infer_file_entry_points(rel_path, file_data, callers))
+
+    # Augment with Nx project-level framework detection from executors
+    if nx_workspace:
+        for project in nx_workspace.get("projects", {}).values():
+            fw = nx_framework_from_executor(project.get("targets", {}))
+            if fw:
+                nf = normalize_framework(fw)
+                if nf:
+                    framework_counts[nf] = framework_counts.get(nf, 0) + 1
 
     layer_dependencies: dict[tuple[str, str], int] = {}
     for source_file, target_files in file_deps.items():
