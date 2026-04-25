@@ -77,6 +77,70 @@ def detect_framework(name: str, node: Any, source: str) -> str | None:
     return None
 
 
+def detect_nx_framework(project_config: dict[str, Any]) -> str | None:
+    """Detect framework from an Nx project.json configuration."""
+    targets = project_config.get("targets", {})
+    for target_name, target in targets.items():
+        executor = target.get("executor", "")
+        if not executor:
+            continue
+
+        if "@nx/angular" in executor or "@angular-devkit" in executor:
+            return "angular"
+        if "@nx/react" in executor:
+            return "react"
+        if "@nx/webpack" in executor or "@nx/vite" in executor:
+            # Look at source files for better guess
+            return "react"  # Most common for webpack/vite in Nx
+        if "@nx/next" in executor:
+            return "nextjs"
+        if "@nx/vue" in executor:
+            return "vue"
+        if "@nx/nuxt" in executor:
+            return "nuxt"
+        if "@nx/expo" in executor:
+            return "expo"
+        if "@nx/react-native" in executor:
+            return "react-native"
+        if "@nx/nest" in executor:
+            return "nestjs"
+        if "@nx/express" in executor:
+            return "express"
+        if "@nx/node" in executor:
+            return "nodejs"
+        if "@nx/js" in executor:
+            return "javascript"
+
+    # Infer from tags
+    tags = project_config.get("tags", [])
+    tag_str = " ".join(tags).lower()
+    if "react" in tag_str:
+        return "react"
+    if "angular" in tag_str or "ng" in tag_str:
+        return "angular"
+    if "vue" in tag_str:
+        return "vue"
+    if "next" in tag_str:
+        return "nextjs"
+    if "nest" in tag_str:
+        return "nestjs"
+
+    # Infer from source root path
+    source_root = project_config.get("sourceRoot", "")
+    if ".react" in source_root.lower():
+        return "react"
+    if ".angular" in source_root.lower() or "/angular" in source_root.lower():
+        return "angular"
+    if ".vue" in source_root.lower():
+        return "vue"
+    if ".next" in source_root.lower():
+        return "nextjs"
+    if ".nest" in source_root.lower():
+        return "nestjs"
+
+    return None
+
+
 def detect_class_framework(name: str, node: Any, source: str) -> str | None:
     source_bytes = node.text if hasattr(node, "text") else b""
     source_str = source_bytes.decode("utf-8", errors="ignore")

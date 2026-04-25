@@ -139,6 +139,13 @@ def find_js_exports(node: Any, exports: list[dict[str, Any]], get_node_name: Get
                                 name = export_clause_child.child_by_field_name("name")
                                 if name:
                                     exports.append({"name": name.text.decode("utf-8"), "type": "named"})
+            elif child.type == "export_clause":
+                # Barrel re-export: export { Button } from './lib/button'
+                for export_clause_child in child.children:
+                    if export_clause_child.type == "export_specifier":
+                        name = export_clause_child.child_by_field_name("name")
+                        if name:
+                            exports.append({"name": name.text.decode("utf-8"), "type": "re-export"})
             elif child.type == "variable_declaration":
                 for declaration_child in child.children:
                     if declaration_child.type == "variable_declarator":

@@ -4,7 +4,7 @@ DEFAULT_IGNORE_PATTERNS = {
     "*.egg-info", ".eggs", "*.pyc", "*.pyo",
     "node_modules", ".npm", ".yarn", ".pnpm-store", "bower_components",
     "dist", "build", "out", "output", "target", "bin", "obj",
-    ".build", "_build", "public/build", "lib",
+    ".build", "_build", "public/build",
     ".next", ".nuxt", ".svelte-kit", ".angular", ".turbo",
     ".parcel-cache", ".webpack", ".rollup.cache", ".vite",
     ".expo", ".gradle", "Pods", "DerivedData",

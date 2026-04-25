@@ -33,7 +33,7 @@ def index_file(
     except (UnicodeDecodeError, OSError):
         return None
 
-    rel_path = str(file_path.relative_to(root))
+    rel_path = file_path.relative_to(root).as_posix()
 
     plugin_symbols = plugin_registry.extract_symbols(content, ext, rel_path)
     if plugin_symbols is not None:

@@ -42,7 +42,7 @@ def normalize_framework(framework: str | None) -> str | None:
     return normalized
 
 
-def infer_file_role(rel_path: str, file_data: dict[str, Any]) -> str:
+def infer_file_role(rel_path: str, file_data: dict[str, Any], nx_workspace: dict[str, Any] | None = None) -> str:
     normalized_path = rel_path.replace("\\", "/").lower()
     file_name = Path(normalized_path).name
     symbols = file_data.get("symbols", [])
@@ -53,6 +53,27 @@ def infer_file_role(rel_path: str, file_data: dict[str, Any]) -> str:
         for sym in symbols
         if isinstance(sym, dict) and sym.get("framework")
     }
+
+    # Nx monorepo: infer role from project type (app vs lib) and path
+    if nx_workspace:
+        projects = nx_workspace.get("projects", {})
+        for proj in projects.values():
+            root = proj.get("root", "")
+            if root and normalized_path.startswith(root.lower() + "/"):
+                ptype = proj.get("projectType", "")
+                tags = [t.lower() for t in proj.get("tags", [])]
+                if ptype == "application":
+                    return "app"
+                # Library roles from tags
+                if any(t in tags for t in ("ui", "frontend", "component")):
+                    return "ui"
+                if any(t in tags for t in ("data", "model", "entity", "db")):
+                    return "data"
+                if any(t in tags for t in ("api", "service", "controller", "route")):
+                    return "api"
+                if any(t in tags for t in ("util", "shared", "helper", "infra")):
+                    return "infra"
+                return "lib"
 
     if file_name in ("cli.py", "manage.py") or any(segment in normalized_path for segment in ("/cli/", "/commands/")):
         return "cli"
@@ -137,6 +158,7 @@ def build_project_profile(
     file_symbols: dict[str, Any],
     call_graph: dict[str, list[str]],
     file_deps: dict[str, list[str]],
+    nx_workspace: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     framework_counts: dict[str, int] = {}
     symbol_type_counts: dict[str, int] = {}
@@ -155,7 +177,7 @@ def build_project_profile(
         symbols = file_data.get("symbols", [])
         api_routes = file_data.get("api_routes", [])
         entities = file_data.get("entities", [])
-        role = infer_file_role(rel_path, file_data)
+        role = infer_file_role(rel_path, file_data, nx_workspace)
         role_by_file[rel_path] = role
 
         bucket = layer_stats.setdefault(role, {"files": 0, "symbols": 0, "routes": 0, "entities": 0})
@@ -249,7 +271,7 @@ def build_project_profile(
 
     recommendations = build_recommendations(frameworks, route_samples, entity_samples, layers)
 
-    return {
+    profile = {
         "frameworks": frameworks,
         "symbol_types": [
             {"name": symbol_type, "count": count}
@@ -269,3 +291,11 @@ def build_project_profile(
         "entity_samples": entity_samples[:20],
         "recommendations": recommendations,
     }
+
+    # Add Nx project graph if available
+    if nx_workspace:
+        from cortexcode.indexing.nx_projects import build_nx_project_graph
+        profile["nx_project_graph"] = build_nx_project_graph(nx_workspace)
+        profile["nx_projects"] = list(nx_workspace.get("projects", {}).keys())
+
+    return profile

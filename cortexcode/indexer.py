@@ -27,6 +27,7 @@ from cortexcode.indexing.resolution import (
     build_file_dependencies,
     build_type_map,
 )
+from cortexcode.indexing.nx_projects import parse_nx_workspace, build_nx_project_graph
 from cortexcode.plugins import plugin_registry
 
 
@@ -223,18 +224,32 @@ class CodeIndexer(IndexerExtractorMixin):
     
     def _build_index(self, root: Path) -> dict[str, Any]:
         """Build the final index structure."""
+        nx_workspace = parse_nx_workspace(root)
+        tsconfig_paths = nx_workspace.get("tsconfig_paths", {}) if nx_workspace else {}
+
+        def _build_file_deps(ts_paths=None):
+            return build_file_dependencies(self.file_symbols, ts_paths)
+
+        def _build_type_map(ts_paths=None):
+            return build_type_map(self.file_symbols, ts_paths)
+
+        def _build_project_profile(_root, file_deps, nx=None):
+            return build_project_profile(self.file_symbols, self.call_graph, file_deps, nx)
+
         result = build_index_result(
             root=root,
             file_symbols=self.file_symbols,
             call_graph=self.call_graph,
             timestamp=timestamp_now(),
             file_hashes=compute_hashes(root, self.file_symbols),
-            build_file_dependencies_fn=lambda: build_file_dependencies(self.file_symbols),
-            build_type_map_fn=lambda: build_type_map(self.file_symbols),
-            build_project_profile_fn=lambda _root, file_deps: build_project_profile(self.file_symbols, self.call_graph, file_deps),
+            build_file_dependencies_fn=lambda ts_paths=tsconfig_paths: _build_file_deps(ts_paths),
+            build_type_map_fn=lambda ts_paths=tsconfig_paths: _build_type_map(ts_paths),
+            build_project_profile_fn=lambda _root, file_deps, nx=nx_workspace: _build_project_profile(_root, file_deps, nx),
             language_map=LANGUAGE_MAP,
             regex_languages=REGEX_LANGUAGES,
             plugin_registry=plugin_registry,
+            nx_workspace=nx_workspace,
+            tsconfig_paths=tsconfig_paths,
         )
         # Add source code for context retrieval
         result["source_code"] = self.source_code

@@ -74,7 +74,12 @@ def build_module_lookup(file_symbols: dict[str, Any]) -> dict[str, set[str]]:
     return module_lookup
 
 
-def candidate_module_keys(rel_path: str, imp: dict[str, Any]) -> list[str]:
+def candidate_module_keys(
+    rel_path: str,
+    imp: dict[str, Any],
+    tsconfig_paths: dict[str, str] | None = None,
+    root_path: str | None = None,
+) -> list[str]:
     module = str(imp.get("module", "")).strip()
     imported_names = [name for name in imp.get("imported", []) if name and name != "*"]
     if not module:
@@ -86,7 +91,7 @@ def candidate_module_keys(rel_path: str, imp: dict[str, Any]) -> list[str]:
 
     if module.startswith("."):
         dot_prefix = len(module) - len(module.lstrip("."))
-        remainder = module[dot_prefix:]
+        remainder = module[dot_prefix:].lstrip("/")
         base_dir = current_dir
         for _ in range(max(dot_prefix - 1, 0)):
             base_dir = base_dir.parent
@@ -99,6 +104,27 @@ def candidate_module_keys(rel_path: str, imp: dict[str, Any]) -> list[str]:
         for imported_name in imported_names:
             candidates.append(str(base_candidate / imported_name.replace(".", "/")))
     else:
+        # Nx / tsconfig path mapping: @scope/lib -> libs/scope/lib
+        if tsconfig_paths and module in tsconfig_paths:
+            mapped = tsconfig_paths[module]
+            candidates.append(mapped)
+            for imported_name in imported_names:
+                candidates.append(f"{mapped}/{imported_name.replace('.', '/')}")
+            return candidates
+        # Partial prefix match for sub-path imports like @scope/lib/sub
+        if tsconfig_paths and "/" in module:
+            parts = module.split("/")
+            # Handle scoped packages: @scope/lib/sub -> prefix is @scope/lib
+            prefix = "/".join(parts[:2]) if parts[0].startswith("@") else parts[0]
+            if prefix in tsconfig_paths:
+                mapped = tsconfig_paths[prefix]
+                suffix = module[len(prefix):].lstrip("/")
+                if suffix:
+                    candidates.append(f"{mapped}/{suffix.replace('.', '/')}")
+                else:
+                    candidates.append(mapped)
+                return candidates
+
         cleaned = module.replace("@/", "src/").replace("~/", "")
         candidates.append(cleaned)
         if "/" not in cleaned and "." in cleaned:
@@ -113,9 +139,10 @@ def resolve_import_to_files(
     rel_path: str,
     imp: dict[str, Any],
     module_lookup: dict[str, set[str]],
+    tsconfig_paths: dict[str, str] | None = None,
 ) -> list[str]:
     resolved_files = set()
-    for candidate in candidate_module_keys(rel_path, imp):
+    for candidate in candidate_module_keys(rel_path, imp, tsconfig_paths):
         normalized_candidate = normalize_module_key(candidate)
         if not normalized_candidate:
             continue
@@ -131,7 +158,7 @@ def resolve_import_to_files(
     return sorted(file_path for file_path in resolved_files if file_path != normalized_rel)
 
 
-def build_type_map(file_symbols: dict[str, Any]) -> dict[str, dict[str, Any]]:
+def build_type_map(file_symbols: dict[str, Any], tsconfig_paths: dict[str, str] | None = None) -> dict[str, dict[str, Any]]:
     exports_by_file = build_exports_by_file(file_symbols)
     module_lookup = build_module_lookup(file_symbols)
 
@@ -142,7 +169,7 @@ def build_type_map(file_symbols: dict[str, Any]) -> dict[str, dict[str, Any]]:
 
         for imp in file_data.get("imports", []):
             imported_names = imp.get("imported", [])
-            target_files = resolve_import_to_files(rel_path, imp, module_lookup)
+            target_files = resolve_import_to_files(rel_path, imp, module_lookup, tsconfig_paths)
             if not target_files:
                 continue
 
@@ -170,7 +197,10 @@ def build_type_map(file_symbols: dict[str, Any]) -> dict[str, dict[str, Any]]:
     return type_map
 
 
-def build_file_dependencies(file_symbols: dict[str, Any]) -> dict[str, list[str]]:
+def build_file_dependencies(
+    file_symbols: dict[str, Any],
+    tsconfig_paths: dict[str, str] | None = None,
+) -> dict[str, list[str]]:
     deps = {}
     module_lookup = build_module_lookup(file_symbols)
 
@@ -183,7 +213,7 @@ def build_file_dependencies(file_symbols: dict[str, Any]) -> dict[str, list[str]
 
         dep_files = set()
         for imp in imports:
-            dep_files.update(resolve_import_to_files(rel_path, imp, module_lookup))
+            dep_files.update(resolve_import_to_files(rel_path, imp, module_lookup, tsconfig_paths))
 
         if dep_files:
             deps[rel_path] = sorted(dep_files)

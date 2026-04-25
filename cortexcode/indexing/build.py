@@ -18,6 +18,8 @@ def build_index_result(
     language_map: LanguageMap,
     regex_languages: RegexLanguages,
     plugin_registry,
+    nx_workspace: dict[str, Any] | None = None,
+    tsconfig_paths: dict[str, str] | None = None,
 ) -> dict[str, Any]:
     languages = set()
     for file_path in file_symbols.keys():
@@ -30,9 +32,9 @@ def build_index_result(
         else:
             languages.add(ext.lstrip("."))
 
-    file_deps = build_file_dependencies_fn()
-    type_map = build_type_map_fn()
-    project_profile = build_project_profile_fn(root, file_deps)
+    file_deps = build_file_dependencies_fn(tsconfig_paths)
+    type_map = build_type_map_fn(tsconfig_paths)
+    project_profile = build_project_profile_fn(root, file_deps, nx_workspace)
 
     result = {
         "project_root": str(root),
@@ -47,5 +49,10 @@ def build_index_result(
 
     if type_map:
         result["type_map"] = type_map
+
+    if nx_workspace:
+        result["nx_workspace"] = nx_workspace
+        if tsconfig_paths:
+            result["nx_workspace"]["tsconfig_paths"] = tsconfig_paths
 
     return plugin_registry.run_post_processors(result)

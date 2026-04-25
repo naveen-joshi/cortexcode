@@ -34,6 +34,26 @@ def detect_monorepo(root_path: Path) -> Optional[Dict[str, Any]]:
 
     nx_json = root_path / "nx.json"
     if nx_json.exists():
+        from cortexcode.indexing.nx_projects import parse_nx_workspace
+
+        nx_workspace = parse_nx_workspace(root_path)
+        if nx_workspace:
+            projects = nx_workspace.get("projects", {})
+            if projects:
+                # Use actual source roots as include patterns
+                patterns = []
+                for proj in projects.values():
+                    source_root = proj.get("sourceRoot", proj.get("root", ""))
+                    if source_root:
+                        patterns.append(f"{source_root}/**/*")
+                # Always include root-level configs (nx.json, tsconfig, package.json)
+                patterns.extend(["nx.json", "package.json", "tsconfig*.json"])
+                return {
+                    "type": "nx",
+                    "include_patterns": patterns,
+                    "nx_workspace": nx_workspace,
+                }
+        # Fallback: old-style nx.json with projects array (pre-Nx v15)
         try:
             data = json.loads(nx_json.read_text(encoding="utf-8"))
             projects = data.get("projects", [])

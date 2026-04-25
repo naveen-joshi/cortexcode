@@ -22,7 +22,7 @@ def should_ignore_file(
     rel_posix = rel_path.as_posix()
 
     for pattern in default_ignore_patterns:
-        if pattern in path_str or pattern in path_posix or pattern in rel_posix:
+        if pattern in rel_str or pattern in rel_posix:
             return True
 
     for pattern in exclude_patterns:
