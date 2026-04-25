@@ -68,6 +68,31 @@ def test_build_type_map_with_tsconfig():
     assert type_map[key]["defined_in"] == "libs/data/src/index.ts"
 
 
+def test_build_type_map_traces_reexports():
+    file_symbols = {
+        "libs/shared/ui/src/index.ts": {
+            "symbols": [],
+            "imports": [],
+            "exports": [{"name": "Button", "type": "re-export", "source": "./lib/button"}],
+        },
+        "libs/shared/ui/src/lib/button.tsx": {
+            "symbols": [{"name": "Button", "type": "function"}],
+            "imports": [],
+            "exports": [{"name": "Button", "type": "function"}],
+        },
+        "apps/store/src/app/main.tsx": {
+            "symbols": [],
+            "imports": [{"module": "@nx-example/shared/ui", "imported": ["Button"]}],
+        },
+    }
+    tsconfig_paths = {"@nx-example/shared/ui": "libs/shared/ui/src"}
+    type_map = build_type_map(file_symbols, tsconfig_paths)
+    key = "apps/store/src/app/main.tsx:Button"
+    assert key in type_map
+    assert type_map[key]["defined_in"] == "libs/shared/ui/src/lib/button.tsx"
+    assert type_map[key]["type"] == "function"
+
+
 def test_build_file_dependencies_without_tsconfig():
     file_symbols = {
         "src/a.ts": {"symbols": [], "imports": [{"module": "./b", "imported": []}]},

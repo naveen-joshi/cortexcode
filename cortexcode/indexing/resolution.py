@@ -33,6 +33,7 @@ def build_exports_by_file(file_symbols: dict[str, Any]) -> dict[str, dict[str, d
                     "defined_in": rel_path,
                     "type": exp.get("type", "export"),
                     "line": exp.get("line"),
+                    "source": exp.get("source"),
                 }
 
         exports_by_file[rel_path] = file_exports
@@ -158,6 +159,28 @@ def resolve_import_to_files(
     return sorted(file_path for file_path in resolved_files if file_path != normalized_rel)
 
 
+def _resolve_reexport_source(barrel_path: str, source: str, file_symbols: dict[str, Any]) -> str | None:
+    """Resolve a re-export source path like './lib/button' to an actual file path."""
+    if not source:
+        return None
+    source = source.lstrip("./")
+    dir_parts = barrel_path.split("/")[:-1]
+    while source.startswith("../"):
+        source = source[3:]
+        if dir_parts:
+            dir_parts.pop()
+    base = "/".join(dir_parts) + "/" + source if dir_parts else source
+    candidates = [base]
+    for ext in (".ts", ".tsx", ".js", ".jsx"):
+        candidates.append(base + ext)
+    for idx in ("index.ts", "index.tsx", "index.js", "index.jsx"):
+        candidates.append(base + "/" + idx)
+    for candidate in candidates:
+        if candidate in file_symbols:
+            return candidate
+    return None
+
+
 def build_type_map(file_symbols: dict[str, Any], tsconfig_paths: dict[str, str] | None = None) -> dict[str, dict[str, Any]]:
     exports_by_file = build_exports_by_file(file_symbols)
     module_lookup = build_module_lookup(file_symbols)
@@ -185,13 +208,25 @@ def build_type_map(file_symbols: dict[str, Any], tsconfig_paths: dict[str, str] 
                     defn = target_exports[imported_name]
                     if defn["defined_in"] == rel_path:
                         continue
+                    # Trace re-exports through barrel files to actual definitions
+                    traced = defn
+                    depth = 0
+                    while traced.get("type") == "re-export" and traced.get("source") and depth < 3:
+                        resolved = _resolve_reexport_source(traced["defined_in"], traced["source"], file_symbols)
+                        if not resolved:
+                            break
+                        next_exports = exports_by_file.get(resolved, {})
+                        if imported_name not in next_exports:
+                            break
+                        traced = next_exports[imported_name]
+                        depth += 1
                     key = f"{rel_path}:{imported_name}"
                     type_map[key] = {
                         "imported_in": rel_path,
                         "name": imported_name,
-                        "defined_in": defn["defined_in"],
-                        "type": defn.get("type"),
-                        "line": defn.get("line"),
+                        "defined_in": traced["defined_in"],
+                        "type": traced.get("type"),
+                        "line": traced.get("line"),
                     }
 
     return type_map
