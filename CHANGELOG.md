@@ -5,6 +5,34 @@ All notable changes to CortexCode will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.10.0] - 2026-04-26
+
+### Added
+
+- **Nx Monorepo Support** — Full support for modern Nx workspaces (v15+) with per-project `project.json` configurations
+  - `cortexcode.indexing.nx_projects` — parses workspace structure, project graph, and tsconfig path mappings
+  - Detects projects under `apps/`, `libs/`, `packages/` directories
+  - Resolves `tsconfig.base.json` path aliases (`@scope/lib` → `libs/lib/src`)
+  - Builds project dependency graph from both `implicitDependencies` and file-level imports
+  - Shell/root app detection via tag-based, graph-centrality, and name heuristics
+  - Framework detection from Nx target executors (`@nx/react:build`, `@nx/angular:build`, etc.)
+
+- **Barrel Re-export Tracing** — `build_type_map` now traces through re-export chains (e.g. `export { Button } from './lib/button'`) to resolve imported symbols to their actual definition files, not just the barrel `index.ts`
+
+- **Nx-Aware Architecture Diagram** — `generate_architecture_diagram` renders Nx project nodes and cross-project dependency edges when indexing an Nx workspace
+
+- **Nx Sections in Generated Docs** — `STRUCTURE.md` and `TECH.md` now include workspace type, shell app, project list, and project dependency graph
+
+### Changed
+
+- **Path Normalization** — All indexed file paths now use forward slashes consistently, fixing Windows path separator mismatches in resolution and type mapping
+
+- **Ignore Patterns** — Removed overly-broad `lib` default ignore pattern that incorrectly skipped Nx `libs/` directories
+
+### Fixed
+
+- **Filtering** — `should_ignore_file` now only checks relative paths against default ignore patterns, preventing false positives from absolute temp directory paths
+
 ## [0.9.1] - 2025-03-15
 
 ### Added
