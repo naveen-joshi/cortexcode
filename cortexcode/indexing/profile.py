@@ -305,8 +305,12 @@ def build_project_profile(
 
     # Add Nx project graph if available
     if nx_workspace:
-        from cortexcode.indexing.nx_projects import build_nx_project_graph
-        profile["nx_project_graph"] = build_nx_project_graph(nx_workspace)
+        from cortexcode.indexing.nx_projects import build_nx_project_graph, detect_shell_app
+        nx_graph = build_nx_project_graph(nx_workspace, file_deps)
+        profile["nx_project_graph"] = nx_graph
         profile["nx_projects"] = list(nx_workspace.get("projects", {}).keys())
+        shell = detect_shell_app(nx_workspace, nx_graph)
+        if shell:
+            profile["nx_shell_app"] = shell
 
     return profile

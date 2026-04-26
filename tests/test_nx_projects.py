@@ -5,6 +5,7 @@ from pathlib import Path
 
 from cortexcode.indexing.nx_projects import (
     build_nx_project_graph,
+    detect_shell_app,
     nx_framework_from_executor,
     parse_nx_workspace,
     _parse_tsconfig_paths,
@@ -80,23 +81,72 @@ def test_nx_framework_from_executor():
 
 
 def test_build_nx_project_graph():
-    ws = {
+    workspace = {
         "projects": {
-            "app-a": {"root": "apps/app-a", "implicitDependencies": ["lib-b"]},
-            "lib-b": {"root": "libs/lib-b", "implicitDependencies": []},
-            "lib-c": {"root": "libs/lib-c", "implicitDependencies": ["lib-b"]},
+            "app1": {"root": "apps/app1", "implicitDependencies": ["lib1"]},
+            "lib1": {"root": "libs/lib1"},
         },
         "tsconfig_paths": {
-            "@scope/lib-b": "libs/lib-b/src/index.ts",
-            "@scope/lib-c": "libs/lib-c/src/index.ts",
+            "@myorg/app1": "apps/app1/src",
+            "@myorg/lib1": "libs/lib1/src",
         },
     }
-    graph = build_nx_project_graph(ws)
-    assert graph == {
-        "app-a": ["lib-b"],
-        "lib-b": [],
-        "lib-c": ["lib-b"],
+
+    graph = build_nx_project_graph(workspace)
+    assert "app1" in graph
+    assert "lib1" in graph
+    assert graph["app1"] == ["lib1"]
+    assert graph["lib1"] == []
+
+
+def test_build_nx_project_graph_derives_from_file_deps():
+    workspace = {
+        "projects": {
+            "store": {"root": "apps/store", "projectType": "application"},
+            "shared-ui": {"root": "libs/shared/ui", "projectType": "library"},
+        },
+        "tsconfig_paths": {
+            "@nx-example/shared/ui": "libs/shared/ui/src",
+        },
     }
+    file_deps = {
+        "apps/store/src/app/main.tsx": ["libs/shared/ui/src/index.ts"],
+        "libs/shared/ui/src/index.ts": [],
+    }
+    graph = build_nx_project_graph(workspace, file_deps)
+    assert "store" in graph
+    assert "shared-ui" in graph
+    assert graph["store"] == ["shared-ui"]
+    assert graph["shared-ui"] == []
+
+
+def test_detect_shell_app():
+    from cortexcode.indexing.nx_projects import detect_shell_app
+    workspace = {
+        "projects": {
+            "shell": {"root": "apps/shell", "projectType": "application", "tags": ["shell"]},
+            "store": {"root": "apps/store", "projectType": "application"},
+            "shared-ui": {"root": "libs/shared/ui", "projectType": "library"},
+        }
+    }
+    assert detect_shell_app(workspace) == "shell"
+
+    workspace2 = {
+        "projects": {
+            "store": {"root": "apps/store", "projectType": "application"},
+            "cart": {"root": "apps/cart", "projectType": "application"},
+        }
+    }
+    graph2 = {"store": ["cart"], "cart": []}
+    assert detect_shell_app(workspace2, graph2) == "store"
+
+    workspace3 = {
+        "projects": {
+            "myapp": {"root": "apps/myapp", "projectType": "application"},
+            "lib1": {"root": "libs/lib1", "projectType": "library"},
+        }
+    }
+    assert detect_shell_app(workspace3) == "myapp"
 
 
 def test_parse_tsconfig_paths():
@@ -122,5 +172,7 @@ if __name__ == "__main__":
     test_parse_nx_workspace_simple()
     test_nx_framework_from_executor()
     test_build_nx_project_graph()
+    test_build_nx_project_graph_derives_from_file_deps()
+    test_detect_shell_app()
     test_parse_tsconfig_paths()
     print("All Nx tests passed!")

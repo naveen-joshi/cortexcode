@@ -35,6 +35,21 @@ def generate_architecture_diagram(index_data: dict[str, Any]) -> str:
                 lines.append(f"        {framework_id}[\"{framework.get('name', 'unknown')} ({framework.get('count', 0)})\"]")
             lines.append("    end")
 
+        # Nx project graph overlay
+        nx_graph = project_profile.get("nx_project_graph", {})
+        nx_projects = project_profile.get("nx_projects", [])
+        if nx_graph and nx_projects:
+            lines.append("    subgraph nx_workspace [Nx Workspace]")
+            for proj_name in nx_projects:
+                proj_id = sanitize_id(f"nx_{proj_name}")
+                lines.append(f"        {proj_id}[\"{proj_name}\"]")
+            lines.append("    end")
+            for proj_name, deps in nx_graph.items():
+                proj_id = sanitize_id(f"nx_{proj_name}")
+                for dep in deps[:10]:
+                    dep_id = sanitize_id(f"nx_{dep}")
+                    lines.append(f"        {proj_id} --> {dep_id}")
+
         return "\n".join(lines)
 
     files = index_data.get("files", {})

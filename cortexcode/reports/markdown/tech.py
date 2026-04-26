@@ -10,15 +10,26 @@ def generate_tech_docs(index: dict[str, Any], output_path: Path) -> None:
     route_samples = project_profile.get("route_samples", [])
     entity_samples = project_profile.get("entity_samples", [])
 
+    nx_projects = project_profile.get("nx_projects")
+    nx_shell = project_profile.get("nx_shell_app")
+
     lines = [
         "# Technology Profile",
         "",
         f"**Project Root:** `{index.get('project_root', 'N/A')}`",
         f"**Languages:** {', '.join(index.get('languages', [])) or 'N/A'}",
+    ]
+
+    if nx_projects:
+        lines.append(f"**Workspace Type:** Nx Monorepo ({len(nx_projects)} projects)")
+        if nx_shell:
+            lines.append(f"**Shell App:** `{nx_shell}`")
+
+    lines.extend([
         "",
         "## Frameworks",
         "",
-    ]
+    ])
 
     if frameworks:
         for framework in frameworks:

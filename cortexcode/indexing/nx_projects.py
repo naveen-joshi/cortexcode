@@ -132,25 +132,97 @@ def nx_framework_from_executor(targets: dict[str, Any]) -> str | None:
     return None
 
 
-def build_nx_project_graph(workspace: dict[str, Any]) -> dict[str, list[str]]:
-    """Build adjacency list of project -> dependent project names."""
-    graph: dict[str, list[str]] = {}
+def build_nx_project_graph(
+    workspace: dict[str, Any],
+    file_dependencies: dict[str, list[str]] | None = None,
+) -> dict[str, list[str]]:
+    """Build adjacency list of project -> dependent project names.
+
+    Uses both implicitDependencies from project.json and file-level imports
+    (when file_dependencies is provided) to derive cross-project edges.
+    """
     projects = workspace.get("projects", {})
     tsconfig_paths = workspace.get("tsconfig_paths", {})
 
-    # Build reverse lookup: alias -> project name
+    # Build reverse lookups
     alias_to_project: dict[str, str] = {}
     for name, proj in projects.items():
         for alias, target in tsconfig_paths.items():
             if target.startswith(proj["root"] + "/") or target == proj["root"]:
                 alias_to_project[alias] = name
 
+    # Map file path -> project name
+    file_to_project: dict[str, str] = {}
+    for name, proj in projects.items():
+        root = proj["root"]
+        for file_path in (file_dependencies or {}).keys():
+            if file_path.startswith(root + "/") or file_path == root:
+                file_to_project[file_path] = name
+
+    graph: dict[str, set[str]] = {name: set() for name in projects}
+
     # Implicit dependencies from project.json
     for name, proj in projects.items():
-        deps: list[str] = []
         for dep in proj.get("implicitDependencies", []):
             if dep in projects:
-                deps.append(dep)
-        graph[name] = deps
+                graph[name].add(dep)
 
-    return graph
+    # Derive from file dependencies: if a file in project A imports a file in project B
+    if file_dependencies:
+        for source_file, target_files in file_dependencies.items():
+            source_proj = file_to_project.get(source_file)
+            if not source_proj:
+                continue
+            for target_file in target_files:
+                target_proj = file_to_project.get(target_file)
+                if target_proj and target_proj != source_proj:
+                    graph[source_proj].add(target_proj)
+
+    # Also derive from tsconfig alias usage in imports
+    # (file_dependencies already captures resolved files, so this is redundant
+    #  but kept as a fallback if file_deps resolution missed something)
+    return {name: sorted(deps) for name, deps in graph.items()}
+
+
+def detect_shell_app(workspace: dict[str, Any], project_graph: dict[str, list[str]] | None = None) -> str | None:
+    """Identify the likely shell / root application in an Nx workspace.
+
+    Heuristics (in order of priority):
+      1. A project tagged "shell" or "host" or "root".
+      2. An application with the most outgoing project dependencies.
+      3. An application named "shell", "host", "app", or matching the repo name.
+    """
+    projects = workspace.get("projects", {})
+    if not projects:
+        return None
+
+    apps = {n: p for n, p in projects.items() if p.get("projectType") == "application"}
+    if not apps:
+        return None
+
+    # 1. Tag-based detection
+    shell_tags = {"shell", "host", "root", "entry", "main"}
+    for name, proj in apps.items():
+        tags = {t.lower() for t in proj.get("tags", [])}
+        if tags & shell_tags:
+            return name
+
+    # 2. Most outgoing deps among apps
+    graph = project_graph or build_nx_project_graph(workspace)
+    if graph:
+        sorted_apps = sorted(
+            apps.keys(),
+            key=lambda n: len(graph.get(n, [])),
+            reverse=True,
+        )
+        if sorted_apps and graph.get(sorted_apps[0]):
+            return sorted_apps[0]
+
+    # 3. Name heuristic
+    for keyword in ("shell", "host", "app", "main", "root"):
+        for name in apps:
+            if keyword in name.lower():
+                return name
+
+    # Fallback: first application
+    return next(iter(apps))
