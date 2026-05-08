@@ -1,17 +1,18 @@
 """Advanced analysis modules."""
 
-from cortexcode.advanced_analysis.advanced_analysis_cycles import find_circular_dependencies
-from cortexcode.advanced_analysis.advanced_analysis_docs import generate_docs_summary
-from cortexcode.advanced_analysis.advanced_analysis_duplicates import find_duplicates
-from cortexcode.advanced_analysis.advanced_analysis_endpoints import find_api_endpoints
-from cortexcode.advanced_analysis.advanced_analysis_search import search_symbols_by_semantics
-from cortexcode.advanced_analysis.advanced_analysis_security import scan_security_issues
+from cortexcode.advanced_analysis.advanced_analysis_cycles import detect_circular_deps
+from cortexcode.advanced_analysis.advanced_analysis_docs import generate_api_docs
+from cortexcode.advanced_analysis.advanced_analysis_duplicates import detect_duplicates
+from cortexcode.advanced_analysis.advanced_analysis_endpoints import extract_endpoints
+from cortexcode.advanced_analysis.advanced_analysis_search import fuzzy_search, regex_search
+from cortexcode.advanced_analysis.advanced_analysis_security import security_scan
 
 __all__ = [
-    "find_circular_dependencies",
-    "generate_docs_summary",
-    "find_duplicates",
-    "find_api_endpoints",
-    "search_symbols_by_semantics",
-    "scan_security_issues",
+    "detect_circular_deps",
+    "generate_api_docs",
+    "detect_duplicates",
+    "extract_endpoints",
+    "fuzzy_search",
+    "regex_search",
+    "security_scan",
 ]

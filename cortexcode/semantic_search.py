@@ -1,4 +1,8 @@
-"""Semantic search over symbols — find symbols by meaning, not just name."""
+"""Semantic search over symbols — find symbols by meaning, not just name.
+
+Uses BM25 (Okapi BM25) instead of TF-IDF because code symbols are short
+documents where length-normalization matters more than term frequency alone.
+"""
 
 import json
 import math
@@ -8,50 +12,63 @@ from pathlib import Path
 from typing import Any
 
 
+# ── Tokenisation ─────────────────────────────────────────────────────────────
+
 def tokenize(text: str) -> list[str]:
     """Split text into lowercase tokens, splitting camelCase and snake_case."""
-    # Split camelCase
     text = re.sub(r'([a-z])([A-Z])', r'\1 \2', text)
-    # Split snake_case and kebab-case
+    text = re.sub(r'([A-Z]+)([A-Z][a-z])', r'\1 \2', text)
     text = text.replace("_", " ").replace("-", " ").replace("/", " ").replace("\\", " ").replace(".", " ")
-    # Lowercase and split
-    tokens = [t.lower() for t in re.findall(r'[a-zA-Z]{2,}', text)]
-    return tokens
+    return [t.lower() for t in re.findall(r'[a-zA-Z]{2,}', text)]
 
 
-# Common programming synonyms for semantic expansion
-_SYNONYMS = {
+def _bigrams(tokens: list[str]) -> list[str]:
+    """Return adjacent token pairs as 'a_b' strings."""
+    return [f"{tokens[i]}_{tokens[i+1]}" for i in range(len(tokens) - 1)]
+
+
+# ── Synonym expansion ─────────────────────────────────────────────────────────
+
+_SYNONYMS: dict[str, list[str]] = {
     "auth": ["authentication", "authorize", "login", "signin", "credentials", "session", "token", "jwt"],
     "authentication": ["auth", "login", "signin", "credentials"],
     "login": ["auth", "signin", "authentication", "credentials"],
+    "logout": ["signout", "revoke", "invalidate"],
     "handler": ["handle", "controller", "action", "endpoint", "route", "api"],
     "controller": ["handler", "endpoint", "route"],
-    "database": ["db", "model", "entity", "schema", "orm", "query", "repository", "store"],
-    "model": ["entity", "schema", "database", "db"],
-    "user": ["account", "profile", "member", "customer"],
-    "create": ["add", "new", "insert", "post", "register", "save"],
-    "delete": ["remove", "destroy", "drop"],
-    "update": ["edit", "modify", "patch", "put", "save"],
-    "get": ["fetch", "read", "find", "query", "retrieve", "list", "load"],
-    "list": ["get", "fetch", "all", "index", "browse"],
-    "component": ["widget", "ui", "view", "page", "screen"],
+    "middleware": ["interceptor", "filter", "guard", "hook"],
+    "database": ["db", "model", "entity", "schema", "orm", "query", "repository", "store", "dao"],
+    "model": ["entity", "schema", "database", "db", "struct"],
+    "user": ["account", "profile", "member", "customer", "person"],
+    "create": ["add", "new", "insert", "post", "register", "save", "init"],
+    "delete": ["remove", "destroy", "drop", "clear"],
+    "update": ["edit", "modify", "patch", "put", "save", "set"],
+    "get": ["fetch", "read", "find", "query", "retrieve", "list", "load", "select"],
+    "list": ["get", "fetch", "all", "index", "browse", "paginate"],
+    "component": ["widget", "ui", "view", "page", "screen", "element"],
     "page": ["screen", "view", "route", "component"],
-    "api": ["endpoint", "route", "handler", "rest"],
-    "route": ["endpoint", "api", "path", "handler"],
-    "test": ["spec", "assert", "expect", "mock"],
-    "error": ["exception", "catch", "throw", "fail"],
-    "config": ["configuration", "settings", "options", "env"],
-    "nav": ["navigation", "menu", "sidebar", "header"],
-    "button": ["btn", "click", "action"],
-    "submit": ["send", "post", "save", "confirm"],
-    "validate": ["check", "verify", "assert", "sanitize"],
-    "search": ["find", "query", "filter", "lookup"],
-    "file": ["upload", "download", "document", "attachment"],
-    "notification": ["alert", "message", "toast", "notify"],
-    "schedule": ["calendar", "booking", "appointment", "time"],
-    "interview": ["meeting", "call", "session", "conversation"],
-    "candidate": ["applicant", "user", "profile"],
-    "job": ["position", "role", "posting", "vacancy"],
+    "api": ["endpoint", "route", "handler", "rest", "graphql", "rpc"],
+    "route": ["endpoint", "api", "path", "handler", "url"],
+    "test": ["spec", "assert", "expect", "mock", "fixture", "suite"],
+    "error": ["exception", "catch", "throw", "fail", "panic", "fault"],
+    "config": ["configuration", "settings", "options", "env", "params", "props"],
+    "nav": ["navigation", "menu", "sidebar", "header", "breadcrumb"],
+    "button": ["btn", "click", "action", "trigger"],
+    "submit": ["send", "post", "save", "confirm", "dispatch"],
+    "validate": ["check", "verify", "assert", "sanitize", "guard"],
+    "search": ["find", "query", "filter", "lookup", "seek"],
+    "file": ["upload", "download", "document", "attachment", "asset"],
+    "notification": ["alert", "message", "toast", "notify", "event"],
+    "schedule": ["calendar", "booking", "appointment", "cron", "timer"],
+    "cache": ["store", "memoize", "persist", "buffer", "redis"],
+    "log": ["logger", "trace", "debug", "monitor", "record"],
+    "parse": ["decode", "deserialize", "read", "extract", "transform"],
+    "format": ["encode", "serialize", "render", "print", "stringify"],
+    "queue": ["job", "task", "worker", "consumer", "producer"],
+    "permission": ["role", "acl", "access", "policy", "grant"],
+    "payment": ["billing", "invoice", "charge", "subscription", "stripe"],
+    "email": ["mail", "smtp", "sendgrid", "message", "notification"],
+    "image": ["photo", "picture", "thumbnail", "media", "upload"],
 }
 
 
@@ -59,26 +76,29 @@ def expand_query(query_tokens: list[str]) -> list[str]:
     """Expand query tokens with synonyms for better recall."""
     expanded = list(query_tokens)
     for token in query_tokens:
-        synonyms = _SYNONYMS.get(token, [])
-        for syn in synonyms:
+        for syn in _SYNONYMS.get(token, []):
             if syn not in expanded:
                 expanded.append(syn)
     return expanded
 
+
+# ── Document building ─────────────────────────────────────────────────────────
 
 def build_symbol_documents(index: dict) -> list[dict]:
     """Build searchable documents from index symbols."""
     docs = []
     files = index.get("files", {})
     call_graph = index.get("call_graph", {})
-    
+
     for rel_path, file_data in files.items():
         if not isinstance(file_data, dict):
             continue
-        
+
+        file_tokens = tokenize(rel_path.replace("/", " ").replace("\\", " "))
+
         for sym in file_data.get("symbols", []):
             name = sym.get("name", "")
-            # Build a rich text representation for search
+            # Core symbol tokens: name, params, calls, doc, class, framework type
             parts = [name]
             parts.extend(sym.get("params", []))
             parts.extend(sym.get("calls", []))
@@ -90,13 +110,18 @@ def build_symbol_documents(index: dict) -> list[dict]:
                 parts.append(sym["framework"])
             if sym.get("type"):
                 parts.append(sym["type"])
-            
-            # Add file path context
-            parts.append(rel_path.replace("/", " ").replace("\\", " "))
-            
-            text = " ".join(parts)
-            tokens = tokenize(text)
-            
+
+            text = " ".join(str(p) for p in parts)
+            base_tokens = tokenize(text)
+            # BM25 document = symbol content only (not file path).
+            # File path is stored separately for a small context bonus.
+            tokens = base_tokens + _bigrams(base_tokens)
+
+            # Connectivity score from call graph
+            callers = sum(
+                1 for callees in call_graph.values() if name in callees
+            )
+
             docs.append({
                 "name": name,
                 "type": sym.get("type"),
@@ -107,98 +132,126 @@ def build_symbol_documents(index: dict) -> list[dict]:
                 "doc": sym.get("doc"),
                 "framework": sym.get("framework"),
                 "tokens": tokens,
-                "text": text,
+                "name_tokens": tokenize(name),
+                "file_tokens": file_tokens,
+                "callers": callers,
             })
-    
+
     return docs
 
 
-class TFIDFSearcher:
-    """Simple TF-IDF based semantic search (no external dependencies)."""
-    
-    def __init__(self, documents: list[dict]):
+# ── BM25 ─────────────────────────────────────────────────────────────────────
+
+class BM25Searcher:
+    """Okapi BM25 ranker over symbol documents.
+
+    BM25 handles short documents better than TF-IDF because it saturates
+    term-frequency (via k1) and applies length normalization (via b), so a
+    symbol name appearing twice in a two-token doc does not dominate over a
+    symbol with a richer but longer description.
+    """
+
+    def __init__(self, documents: list[dict], k1: float = 1.5, b: float = 0.75):
         self.documents = documents
-        self.idf: dict[str, float] = {}
-        self._build_idf()
-    
-    def _build_idf(self):
-        """Compute inverse document frequency for all terms."""
+        self.k1 = k1
+        self.b = b
+        self._idf: dict[str, float] = {}
+        self._avgdl: float = 0.0
+        self._build()
+
+    def _build(self) -> None:
         n = len(self.documents)
         if n == 0:
             return
-        
-        doc_freq: dict[str, int] = Counter()
+
+        total_len = sum(len(d["tokens"]) for d in self.documents)
+        self._avgdl = total_len / n
+
+        doc_freq: Counter = Counter()
         for doc in self.documents:
-            unique_tokens = set(doc["tokens"])
-            for token in unique_tokens:
-                doc_freq[token] += 1
-        
-        for token, df in doc_freq.items():
-            self.idf[token] = math.log(n / (1 + df))
-    
-    def _tfidf_vector(self, tokens: list[str]) -> dict[str, float]:
-        """Compute TF-IDF vector for a token list."""
-        tf = Counter(tokens)
-        total = len(tokens) or 1
-        vector = {}
-        for token, count in tf.items():
-            tf_val = count / total
-            idf_val = self.idf.get(token, 0)
-            vector[token] = tf_val * idf_val
-        return vector
-    
-    def _cosine_similarity(self, vec_a: dict[str, float], vec_b: dict[str, float]) -> float:
-        """Compute cosine similarity between two sparse vectors."""
-        common = set(vec_a.keys()) & set(vec_b.keys())
-        if not common:
-            return 0.0
-        
-        dot = sum(vec_a[k] * vec_b[k] for k in common)
-        mag_a = math.sqrt(sum(v ** 2 for v in vec_a.values()))
-        mag_b = math.sqrt(sum(v ** 2 for v in vec_b.values()))
-        
-        if mag_a == 0 or mag_b == 0:
-            return 0.0
-        
-        return dot / (mag_a * mag_b)
-    
+            for term in set(doc["tokens"]):
+                doc_freq[term] += 1
+
+        for term, df in doc_freq.items():
+            self._idf[term] = math.log((n - df + 0.5) / (df + 0.5) + 1)
+
+    def _score(self, query_terms: list[str], doc: dict) -> float:
+        tf_map = Counter(doc["tokens"])
+        dl = len(doc["tokens"]) or 1
+        k1, b, avgdl = self.k1, self.b, self._avgdl
+
+        score = 0.0
+        for term in query_terms:
+            idf = self._idf.get(term, 0.0)
+            tf = tf_map.get(term, 0)
+            numerator = tf * (k1 + 1)
+            denominator = tf + k1 * (1 - b + b * dl / avgdl)
+            score += idf * numerator / denominator if denominator else 0.0
+        return score
+
     def search(self, query: str, limit: int = 10) -> list[dict]:
-        """Search documents by semantic similarity to query."""
-        query_tokens = tokenize(query)
-        if not query_tokens:
+        base_tokens = tokenize(query)
+        if not base_tokens:
             return []
-        
-        # Expand with synonyms
-        expanded_tokens = expand_query(query_tokens)
-        query_vec = self._tfidf_vector(expanded_tokens)
-        
-        scored = []
+
+        expanded = expand_query(base_tokens)
+        query_terms = expanded + _bigrams(expanded)
+
+        scored: list[tuple[float, dict]] = []
         for doc in self.documents:
-            doc_vec = self._tfidf_vector(doc["tokens"])
-            score = self._cosine_similarity(query_vec, doc_vec)
-            
-            # Boost exact name matches
-            name_tokens = tokenize(doc.get("name", ""))
-            if any(qt in name_tokens for qt in query_tokens):
-                score += 0.5
-            # Boost partial name matches from expanded tokens
-            elif any(qt in name_tokens for qt in expanded_tokens):
-                score += 0.2
-            
-            # Boost doc/framework matches
+            score = self._score(query_terms, doc)
+
+            # Exact name match bonus
+            if any(qt in doc["name_tokens"] for qt in base_tokens):
+                score += 3.0
+            elif any(qt in doc["name_tokens"] for qt in expanded):
+                score += 1.0
+
+            # Prefix / morphological match bonus
+            # Handles "auth"→"authenticate", "authentication"→"authenticate", etc.
+            # Check both base tokens (strong) and expanded synonyms (weaker).
+            for strength, token_set in ((1.2, base_tokens), (0.5, expanded)):
+                for qt in token_set:
+                    if qt in base_tokens and strength < 1.0:
+                        continue  # already handled in the strong pass
+                    for nt in doc["name_tokens"]:
+                        if qt == nt:
+                            continue
+                        if nt.startswith(qt) or qt.startswith(nt):
+                            score += strength
+                            break
+                        # Long common prefix (morphological variants like authenticate/authentication)
+                        prefix_len = 0
+                        for a, b in zip(qt, nt):
+                            if a == b:
+                                prefix_len += 1
+                            else:
+                                break
+                        if prefix_len >= min(len(qt), len(nt)) * 0.75 and prefix_len >= 4:
+                            score += strength
+                            break
+
+            # Docstring mention bonus
             if doc.get("doc"):
                 doc_lower = doc["doc"].lower()
-                if any(qt in doc_lower for qt in query_tokens):
-                    score += 0.15
-            
-            if score > 0.01:
+                if any(qt in doc_lower for qt in base_tokens):
+                    score += 0.5
+
+            # File-context bonus (smaller than name match — file name is shared context)
+            if any(qt in doc["file_tokens"] for qt in expanded):
+                score += 0.3
+
+            # Caller-connectivity bonus — well-connected symbols are more likely to be relevant
+            if doc["callers"] > 0:
+                score += min(math.log1p(doc["callers"]) * 0.2, 1.0)
+
+            if score > 0:
                 scored.append((score, doc))
-        
+
         scored.sort(key=lambda x: x[0], reverse=True)
-        
-        results = []
-        for score, doc in scored[:limit]:
-            results.append({
+
+        return [
+            {
                 "name": doc["name"],
                 "type": doc["type"],
                 "file": doc["file"],
@@ -208,28 +261,29 @@ class TFIDFSearcher:
                 "doc": doc.get("doc"),
                 "framework": doc.get("framework"),
                 "score": round(score, 3),
-            })
-        
-        return results
+            }
+            for score, doc in scored[:limit]
+        ]
 
+
+# ── Public API ────────────────────────────────────────────────────────────────
 
 def semantic_search(index_path: Path, query: str, limit: int = 10) -> dict[str, Any]:
-    """Run semantic search over the index.
-    
+    """Run BM25 semantic search over the index.
+
     Args:
         index_path: Path to index.json
-        query: Natural language query (e.g. "authentication handler", "database models")
+        query: Natural language query (e.g. "authentication handler")
         limit: Max results
-    
+
     Returns:
-        Dictionary with ranked results
+        Dictionary with ranked results and metadata.
     """
     index = json.loads(index_path.read_text(encoding="utf-8"))
     documents = build_symbol_documents(index)
-    
-    searcher = TFIDFSearcher(documents)
+    searcher = BM25Searcher(documents)
     results = searcher.search(query, limit)
-    
+
     return {
         "query": query,
         "results": results,

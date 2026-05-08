@@ -8,7 +8,7 @@ from typing import Any
 
 def scan_dependencies(root: Path) -> dict[str, Any]:
     """Scan project for dependency files and check for known issues.
-    
+
     Scans: package.json, requirements.txt, pyproject.toml, Gemfile, go.mod, Cargo.toml
     """
     root = Path(root).resolve()
@@ -17,38 +17,38 @@ def scan_dependencies(root: Path) -> dict[str, Any]:
         "dependencies": [],
         "warnings": [],
     }
-    
+
     # package.json
     pkg_json = root / "package.json"
     if pkg_json.exists():
         _scan_package_json(pkg_json, results)
-    
+
     # requirements.txt
     req_txt = root / "requirements.txt"
     if req_txt.exists():
         _scan_requirements_txt(req_txt, results)
-    
+
     # pyproject.toml
     pyproject = root / "pyproject.toml"
     if pyproject.exists():
         _scan_pyproject_toml(pyproject, results)
-    
+
     # go.mod
     go_mod = root / "go.mod"
     if go_mod.exists():
         _scan_go_mod(go_mod, results)
-    
+
     # Cargo.toml
     cargo = root / "Cargo.toml"
     if cargo.exists():
         _scan_cargo_toml(cargo, results)
-    
+
     # Check for common issues
     _check_common_issues(root, results)
-    
+
     results["total_dependencies"] = len(results["dependencies"])
     results["total_warnings"] = len(results["warnings"])
-    
+
     return results
 
 
@@ -57,7 +57,7 @@ def _scan_package_json(path: Path, results: dict) -> None:
     try:
         data = json.loads(path.read_text(encoding="utf-8"))
         results["scanned_files"].append(str(path.name))
-        
+
         for section in ("dependencies", "devDependencies"):
             deps = data.get(section, {})
             for name, version in deps.items():
@@ -68,16 +68,14 @@ def _scan_package_json(path: Path, results: dict) -> None:
                     "dev": section == "devDependencies",
                 }
                 results["dependencies"].append(dep)
-                
-                # Check for wildcard/any versions
+
                 if version in ("*", "latest", ""):
                     results["warnings"].append({
                         "package": name,
                         "severity": "medium",
                         "message": f"Unpinned version '{version}' — use a specific version range",
                     })
-                
-                # Check for known risky patterns
+
                 _check_npm_warnings(name, version, results)
     except (json.JSONDecodeError, OSError):
         pass
@@ -91,21 +89,20 @@ def _scan_requirements_txt(path: Path, results: dict) -> None:
             line = line.strip()
             if not line or line.startswith("#") or line.startswith("-"):
                 continue
-            
-            # Parse name==version or name>=version
+
             match = re.match(r'^([a-zA-Z0-9_-]+)\s*([><=!~]+)?\s*(.*)$', line)
             if match:
                 name = match.group(1)
                 op = match.group(2) or ""
                 version = match.group(3) or "unpinned"
-                
+
                 results["dependencies"].append({
                     "name": name,
                     "version": f"{op}{version}" if op else version,
                     "source": "requirements.txt",
                     "dev": False,
                 })
-                
+
                 if not op:
                     results["warnings"].append({
                         "package": name,
@@ -121,8 +118,7 @@ def _scan_pyproject_toml(path: Path, results: dict) -> None:
     try:
         content = path.read_text(encoding="utf-8")
         results["scanned_files"].append(str(path.name))
-        
-        # Simple TOML parsing for dependencies array
+
         in_deps = False
         for line in content.splitlines():
             stripped = line.strip()
@@ -133,7 +129,6 @@ def _scan_pyproject_toml(path: Path, results: dict) -> None:
                 if stripped == "]":
                     in_deps = False
                     continue
-                # Parse "package>=version"
                 match = re.search(r'"([^"]+)"', stripped)
                 if match:
                     dep_str = match.group(1)
@@ -154,7 +149,7 @@ def _scan_go_mod(path: Path, results: dict) -> None:
     try:
         content = path.read_text(encoding="utf-8")
         results["scanned_files"].append("go.mod")
-        
+
         for line in content.splitlines():
             line = line.strip()
             if line.startswith("require") or line.startswith(")") or line.startswith("("):
@@ -176,7 +171,7 @@ def _scan_cargo_toml(path: Path, results: dict) -> None:
     try:
         content = path.read_text(encoding="utf-8")
         results["scanned_files"].append("Cargo.toml")
-        
+
         in_deps = False
         for line in content.splitlines():
             stripped = line.strip()
@@ -202,7 +197,6 @@ def _scan_cargo_toml(path: Path, results: dict) -> None:
 
 def _check_npm_warnings(name: str, version: str, results: dict) -> None:
     """Check for commonly known risky npm patterns."""
-    # Check for http:// or git:// protocol in version
     if version.startswith("http://") or version.startswith("git://"):
         results["warnings"].append({
             "package": name,
@@ -213,7 +207,6 @@ def _check_npm_warnings(name: str, version: str, results: dict) -> None:
 
 def _check_common_issues(root: Path, results: dict) -> None:
     """Check for common security issues in the project."""
-    # .env file committed
     env_file = root / ".env"
     if env_file.exists():
         gitignore = root / ".gitignore"
@@ -231,86 +224,185 @@ def _check_common_issues(root: Path, results: dict) -> None:
                 "severity": "high",
                 "message": ".env file exists with no .gitignore — secrets may be exposed",
             })
-    
-    # package-lock.json missing
+
     if (root / "package.json").exists() and not (root / "package-lock.json").exists() and not (root / "yarn.lock").exists():
         results["warnings"].append({
             "package": "lockfile",
             "severity": "medium",
             "message": "No lockfile (package-lock.json or yarn.lock) — builds may not be reproducible",
         })
-    
-    # Check for common code issues
+
     _scan_code_patterns(root, results)
 
 
-# Bug detection patterns for code scanning
-CODE_PATTERNS = [
-    # Security issues
-    (r"eval\s*\(", "high", "Use of eval() — potential code injection"),
-    (r"exec\s*\(", "high", "Use of exec() — potential code injection"),
-    (r"pickle\.loads", "high", "Use of pickle — potential deserialization vulnerability"),
-    (r"yaml\.load\s*\([^,)]*(?<!Loader)", "high", "Unsafe YAML loading — use yaml.safe_load()"),
-    (r"subprocess\.call\s*\(\s*input", "high", "Shell injection via subprocess — sanitize input"),
-    (r"os\.system\s*\(", "high", "Use of os.system() — shell injection risk"),
-    (r"\.format\s*\([^)]*%", "medium", "String formatting with % — consider f-strings"),
-    (r"password\s*=\s*['\"][^'\"]+['\"]", "high", "Hardcoded password detected"),
-    (r"api[_-]?key\s*=\s*['\"][^'\"]+['\"]", "high", "Hardcoded API key detected"),
-    (r"secret\s*=\s*['\"][^'\"]+['\"]", "high", "Hardcoded secret detected"),
-    (r"token\s*=\s*['\"][^'\"]+['\"]", "high", "Hardcoded token detected"),
-    (r"SELECT\s+.*\+.*FROM", "high", "SQL string concatenation — use parameterized queries"),
-    (r"cursor\.execute\s*\(\s*f[\"']", "high", "SQL f-string injection — use parameterized queries"),
-    (r"requests\.get\s*\(\s*f[\"']", "high", "URL injection via f-string — sanitize URLs"),
-    (r"open\s*\(\s*[^,)]*\+", "high", "Path traversal — use os.path.join()"),
-    (r"Path\s*\(\s*[^,)]*\+", "medium", "Path concatenation — use os.path.join()"),
-    
-    # Code quality issues
-    (r"except\s*:", "medium", "Bare except clause — catch specific exceptions"),
-    (r"pass\s*$", "medium", "Empty code block with pass — implement or add TODO"),
-    (r"TODO\s*:", "low", "TODO comment found"),
-    (r"FIXME\s*:", "medium", "FIXME comment found"),
-    (r"print\s*\(", "low", "Debug print statement — remove in production"),
-    (r"import\s+\*\s*$", "medium", "Wildcard import — import specific names"),
-    (r"from\s+\w+\s+import\s+\w+,\s*\w+,\s*\w+,\s*\w+,\s*\w+,\s*\w+", "low", "Many imports on one line — consider line breaks"),
-    
-    # Performance issues
-    (r"for\s+.*\s+in\s+.*:\s*\n\s*for\s+", "medium", "Nested loops — consider optimization"),
-    (r"\.append\s*\(\s*\[", "medium", "Appending list in loop — use list comprehension"),
-    (r"while\s+True\s*:", "medium", "Infinite loop — ensure exit condition"),
-    (r"time\.sleep\s*\(\s*0\s*\)", "low", "time.sleep(0) — unnecessary yield"),
-    
-    # Best practices
-    (r"if\s+__name__\s*==\s*['\"]__main__['\"]:", "low", "Missing main guard"),
-    (r"class\s+\w+.*:\s*\n\s*def\s+__init__", "medium", "Consider dataclass for simple data containers"),
-    (r"@property\s*\n\s*def\s+\w+\s*\(\s*\)\s*:\s*\n\s*return\s+self\.", "low", "Simple property — consider using attribute directly"),
+# ── Patterns ────────────────────────────────────────────────────────────────
+# Each entry: (compiled_regex, severity, message_template)
+# message_template may contain one {match} placeholder for the matched text.
+
+_SECRET_VALUE = re.compile(
+    r"""(['"])[a-zA-Z0-9+/=_\-!@#$%^&*]{8,}\1"""  # non-trivial quoted string (8+ chars)
+)
+_SAFE_RHS = re.compile(
+    r"""(os\.(environ|getenv)\b|config\.(get|setting)\b|settings\.\w|getattr\(|environ\[|os\.env|None\b|['"]{2}|['"]{2})""",
+    re.IGNORECASE,
+)
+
+# Code-quality patterns: (regex_source, severity, message, skip_comments)
+# skip_comments=True means lines that are pure comments are ignored.
+# Set to False for patterns that ARE expected to appear in comments (TODO/FIXME).
+_CODE_PATTERNS: list[tuple[str, str, str, bool]] = [
+    # Security — injection risks (skip_comments=True)
+    (r"eval\s*\(", "high", "Use of eval() — potential code injection", True),
+    (r"exec\s*\(", "high", "Use of exec() — potential code injection", True),
+    (r"pickle\.loads\b", "high", "pickle.loads — potential deserialization vulnerability", True),
+    (r"yaml\.load\s*\([^)]*\)", "high", "Unsafe yaml.load() — use yaml.safe_load()", True),
+    (r"os\.system\s*\(", "high", "os.system() — shell injection risk, prefer subprocess", True),
+    (r"subprocess\.(call|run|Popen)\s*\([^,)]*shell\s*=\s*True", "high", "subprocess with shell=True — injection risk", True),
+    # SQL injection
+    (r'cursor\.execute\s*\(\s*f["\']', "high", "SQL f-string injection — use parameterized queries", True),
+    (r'execute\s*\(\s*["\'].*["\'].+%\s*\(', "high", "SQL %-formatting injection — use parameterized queries", True),
+    (r'SELECT\s+\*?\s+FROM\s+\w+.*\+', "high", "SQL string concatenation — use parameterized queries", True),
+    # Path traversal
+    (r"open\s*\(\s*(?:request|user_input|data)\b", "high", "open() with user-controlled path — validate first", True),
+    # XSS
+    (r"mark_safe\s*\(", "medium", "Django mark_safe() — ensure content is sanitized", True),
+    (r"Markup\s*\(", "medium", "Jinja2 Markup() — ensure content is sanitized", True),
+    # Code quality
+    (r"except\s*:", "medium", "Bare except: — catch specific exceptions instead", True),
+    # TODO/FIXME live IN comments — do not skip comment lines for these
+    (r"#\s*TODO\b", "low", "TODO comment — track in issue tracker", False),
+    (r"#\s*FIXME\b", "medium", "FIXME comment — unresolved known issue", False),
+    (r"from\s+\S+\s+import\s+\*", "medium", "Wildcard import — import specific names", True),
+    (r"while\s+True\s*:", "low", "Infinite loop — verify exit condition is reachable", True),
+    # Performance
+    (r"time\.sleep\s*\(\s*0\s*\)", "low", "time.sleep(0) — unnecessary sleep", True),
 ]
+
+_COMPILED_PATTERNS: list[tuple[re.Pattern, str, str, bool]] = [
+    (re.compile(pat, re.IGNORECASE | re.MULTILINE), sev, msg, skip_comments)
+    for pat, sev, msg, skip_comments in _CODE_PATTERNS
+]
+
+# Hardcoded-secret patterns — checked separately with false-positive filtering
+_SECRET_PATTERNS: list[tuple[re.Pattern, str]] = [
+    (re.compile(r'(?:password|passwd|pwd)\s*=\s*', re.IGNORECASE), "Hardcoded password"),
+    (re.compile(r'(?:api[_-]?key|apikey)\s*=\s*', re.IGNORECASE), "Hardcoded API key"),
+    (re.compile(r'(?:secret[_-]?key|secret)\s*=\s*', re.IGNORECASE), "Hardcoded secret"),
+    (re.compile(r'(?:access[_-]?token|auth[_-]?token|token)\s*=\s*', re.IGNORECASE), "Hardcoded token"),
+    (re.compile(r'(?:private[_-]?key)\s*=\s*', re.IGNORECASE), "Hardcoded private key"),
+]
+
+_SKIP_DIRS = frozenset(("node_modules", ".venv", "venv", "__pycache__", ".git", "dist", "build", ".cortexcode"))
+_SCAN_EXTENSIONS = frozenset((".py", ".js", ".ts", ".jsx", ".tsx"))
+
+
+def _is_comment_line(line: str) -> bool:
+    stripped = line.lstrip()
+    return stripped.startswith("#") or stripped.startswith("//") or stripped.startswith("*")
+
+
+def _is_safe_secret_rhs(rhs: str) -> bool:
+    """Return True if the right-hand side of an assignment is not a literal secret."""
+    rhs = rhs.strip()
+    # Empty string, None, or variable reference
+    if rhs in ('""', "''", "None", ""):
+        return True
+    # Reads from environment, config, or settings
+    if _SAFE_RHS.search(rhs):
+        return True
+    # Plain identifier (e.g. SECRET_KEY = MY_SECRET_CONSTANT)
+    if re.match(r'^[A-Z_][A-Z0-9_]*$', rhs):
+        return True
+    return False
 
 
 def _scan_code_patterns(root: Path, results: dict) -> None:
-    """Scan code files for common bug patterns."""
-    extensions = {".py", ".js", ".ts", ".jsx", ".tsx"}
-    
-    for py_file in root.rglob("*"):
-        if py_file.is_file() and py_file.suffix in extensions:
-            if any(skip in str(py_file) for skip in ("node_modules", ".venv", "venv", "__pycache__", ".git", "dist", "build")):
+    """Scan source files for known bug and security patterns.
+
+    Warnings are grouped per file+pattern to avoid noise from repeated matches.
+    """
+    # Track seen (file, message) pairs to deduplicate
+    seen: set[tuple[str, str]] = set()
+
+    for src_file in root.rglob("*"):
+        if not src_file.is_file():
+            continue
+        if src_file.suffix not in _SCAN_EXTENSIONS:
+            continue
+        if any(skip in src_file.parts for skip in _SKIP_DIRS):
+            continue
+
+        try:
+            content = src_file.read_text(encoding="utf-8", errors="ignore")
+        except OSError:
+            continue
+
+        lines = content.splitlines()
+        rel_name = str(src_file.relative_to(root))
+
+        # ── General code patterns ────────────────────────────────────────
+        for pattern, severity, message, skip_comments in _COMPILED_PATTERNS:
+            first_line: int | None = None
+            count = 0
+            for m in pattern.finditer(content):
+                line_num = content[: m.start()].count("\n") + 1
+                if skip_comments and line_num <= len(lines) and _is_comment_line(lines[line_num - 1]):
+                    continue
+                if first_line is None:
+                    first_line = line_num
+                count += 1
+
+            if first_line is None:
                 continue
-            
-            try:
-                content = py_file.read_text(encoding="utf-8", errors="ignore")
-                lines = content.splitlines()
-                
-                for pattern, severity, message in CODE_PATTERNS:
-                    import re
-                    matches = re.finditer(pattern, content, re.IGNORECASE | re.MULTILINE)
-                    for match in matches:
-                        line_num = content[:match.start()].count("\n") + 1
-                        # Get line content
-                        line_content = lines[line_num - 1].strip() if line_num <= len(lines) else ""
-                        
-                        results["warnings"].append({
-                            "package": f"{py_file.name}:{line_num}",
-                            "severity": severity,
-                            "message": f"{message}: {line_content[:60]}...",
-                        })
-            except Exception:
-                pass
+
+            key = (rel_name, message)
+            if key in seen:
+                continue
+            seen.add(key)
+
+            suffix = f" ({count} occurrences)" if count > 1 else f" (line {first_line})"
+            results["warnings"].append({
+                "package": rel_name,
+                "severity": severity,
+                "message": f"{message}{suffix}",
+            })
+
+        # ── Hardcoded-secret patterns (with false-positive filtering) ────
+        for pattern, label in _SECRET_PATTERNS:
+            first_line = None
+            count = 0
+            for m in pattern.finditer(content):
+                line_num = content[: m.start()].count("\n") + 1
+                raw_line = lines[line_num - 1] if line_num <= len(lines) else ""
+
+                if _is_comment_line(raw_line):
+                    continue
+
+                # Extract the RHS of the assignment.
+                # m.end() is absolute in `content`; compute the line-relative offset.
+                line_start = content.rfind("\n", 0, m.start()) + 1
+                rhs = raw_line[m.end() - line_start:].split("#")[0].strip()
+                if _is_safe_secret_rhs(rhs):
+                    continue
+                # Require a non-trivial quoted string on the RHS
+                if not _SECRET_VALUE.search(rhs):
+                    continue
+
+                if first_line is None:
+                    first_line = line_num
+                count += 1
+
+            if first_line is None:
+                continue
+
+            key = (rel_name, label)
+            if key in seen:
+                continue
+            seen.add(key)
+
+            suffix = f" ({count} occurrences)" if count > 1 else f" (line {first_line})"
+            results["warnings"].append({
+                "package": rel_name,
+                "severity": "high",
+                "message": f"{label} detected{suffix}",
+            })

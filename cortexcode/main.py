@@ -21,6 +21,7 @@ from cortexcode.cli import handle_index_command
 from cortexcode.cli import handle_report_command
 from cortexcode.cli import handle_scan_command
 from cortexcode.cli import handle_search_command
+from cortexcode.cli import handle_semantic_find_command
 from cortexcode.cli import handle_lsp_command, handle_mcp_command
 from cortexcode.cli import handle_stats_command
 from cortexcode.cli import require_ai_doc_generator, require_index_path
@@ -65,7 +66,7 @@ REPORT_TYPES = ["overview", "tech", "hotspots", "routes", "entities", "frontend"
 
 
 @click.group(cls=SectionedHelpGroup)
-@click.version_option(version="0.6.0", prog_name="cortexcode")
+@click.version_option(version="0.10.0", prog_name="cortexcode")
 def main():
     """AI-powered code indexing, analysis, and documentation."""
     pass
@@ -747,10 +748,14 @@ def mcp():
 
 
 @mcp.command()
-def start():
-    """Start MCP server for AI agent integration (stdin/stdout)."""
-    from cortexcode.mcp import run_stdio_server
-    handle_mcp_command(console, run_stdio_server)
+@click.option("--port", "-p", default=None, type=int, help="HTTP port (omit to use stdin/stdout)")
+def start(port):
+    """Start MCP server for AI agent integration (stdin/stdout or HTTP)."""
+    from cortexcode.mcp import CortexCodeMCPServer, run_http_transport, run_stdio_server
+    if port:
+        run_http_transport(CortexCodeMCPServer, port)
+    else:
+        handle_mcp_command(console, run_stdio_server)
 
 
 @mcp.command()
@@ -881,97 +886,6 @@ def precommit():
     """Install pre-commit hook for security scanning."""
     from cortexcode.cli.cli_githook import handle_githook_precommit
     handle_githook_precommit(console)
-
-
-@main.command()
-@click.argument("query")
-@click.option("-p", "--path", default=".", help="Project path")
-@click.option("-d", "--depth", default=5, help="Max trace depth")
-@click.option("-c", "--context", default=5, help="Context lines to show")
-def trace(query, path, depth, context):
-    """Trace code flow from a symbol through call graph.
-
-    Examples:
-        cortexcode trace login
-        cortexcode trace auth -d 10
-    """
-    from cortexcode.cli.cli_trace import handle_trace_command
-    handle_trace_command(console, query, path, depth, context)
-
-
-@main.command()
-@click.argument("query")
-@click.option("-p", "--path", default=".", help="Project path")
-@click.option("-d", "--depth", default=5, help="Max depth")
-def flow(query, path, depth):
-    """Analyze code flow for a concept and group by file.
-
-    Examples:
-        cortexcode flow auth
-        cortexcode flow payment
-    """
-    from cortexcode.cli.cli_trace import handle_flow_command
-    handle_flow_command(console, query, path, depth)
-
-
-@main.command(name="find", hidden=True)
-@click.argument("query")
-@click.option("-n", "--limit", default=10, help="Max results")
-def semantic_find(query, limit):
-    """Semantic search — find symbols by meaning, not just name.
-
-    Examples: cortexcode find "authentication handler"
-              cortexcode find "database models"
-              cortexcode find "user login flow"
-    """
-    from cortexcode.semantic_search import semantic_search
-
-    handle_semantic_find_command(
-        console,
-        query,
-        limit,
-        require_index_path,
-        semantic_search,
-    )
-
-
-@main.command()
-@click.argument("path", default=".", type=click.Path(exists=True))
-def scan(path):
-    """Scan dependencies for known issues and security warnings."""
-    from cortexcode.vuln_scan import scan_dependencies
-
-    handle_scan_command(console, path, scan_dependencies)
-
-
-@main.command(hidden=True)
-@click.argument("path", default=".", type=click.Path(exists=True))
-def dead_code(path):
-    """Detect potentially unused symbols (dead code)."""
-    from cortexcode.analysis import detect_dead_code
-
-    handle_dead_code_command(console, path, detect_dead_code)
-
-
-@main.command(hidden=True)
-@click.argument("path", default=".", type=click.Path(exists=True))
-@click.option("--top", "-n", default=20, help="Show top N most complex functions")
-@click.option("--min-score", default=0, help="Minimum complexity score to show")
-def complexity(path, top, min_score):
-    """Analyze code complexity metrics for all functions."""
-    from cortexcode.analysis import compute_complexity
-
-    handle_complexity_command(console, path, top, min_score, compute_complexity)
-
-
-@main.command(hidden=True)
-@click.argument("symbol")
-@click.argument("path", default=".", type=click.Path(exists=True))
-def impact(symbol, path):
-    """Analyze change impact — what breaks if a symbol is modified."""
-    from cortexcode.analysis import analyze_change_impact
-
-    handle_impact_command(console, symbol, path, analyze_change_impact)
 
 
 @main.group()
