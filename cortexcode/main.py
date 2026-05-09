@@ -27,7 +27,7 @@ from cortexcode.cli import handle_stats_command
 from cortexcode.cli import require_ai_doc_generator, require_index_path
 from cortexcode.cli import handle_watch_command
 from cortexcode.cli import handle_wiki_command
-from cortexcode.cli import handle_workspace_add, handle_workspace_index, handle_workspace_init, handle_workspace_list, handle_workspace_remove, handle_workspace_search
+from cortexcode.cli import handle_workspace_add, handle_workspace_deps, handle_workspace_impact, handle_workspace_index, handle_workspace_init, handle_workspace_linkage, handle_workspace_list, handle_workspace_remove, handle_workspace_search
 from cortexcode.context import get_context, calculate_token_savings
 from cortexcode.git_diff import get_diff_context
 from cortexcode.docs import generate_all_docs
@@ -946,6 +946,31 @@ def workspace_search(query):
     from cortexcode.workspace import Workspace
 
     handle_workspace_search(console, query, Workspace)
+
+
+@workspace.command("impact")
+@click.argument("ref")
+def workspace_impact(ref):
+    """Cross-repo impact analysis. REF is `<repo_id>:<symbol>` or `<repo_id>/<file>`."""
+    from cortexcode.workspace import Workspace
+
+    handle_workspace_impact(console, ref, Workspace)
+
+
+@workspace.command("deps")
+def workspace_deps():
+    """Show cross-repo dependency graph (package edges between members)."""
+    from cortexcode.workspace import Workspace
+
+    handle_workspace_deps(console, Workspace)
+
+
+@workspace.command("linkage")
+def workspace_linkage():
+    """Inspect the cached cross-repo linkage."""
+    from cortexcode.workspace import Workspace
+
+    handle_workspace_linkage(console, Workspace)
 
 
 @main.command(hidden=True)

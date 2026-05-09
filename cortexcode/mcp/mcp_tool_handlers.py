@@ -13,13 +13,14 @@ class MCPToolHandlersMixin:
 
     def _call_tool(self, req_id: Any, tool_name: str, args: dict) -> dict:
         """Execute a tool call."""
-        self._reload_index()
-
-        if not self.index:
-            return create_mcp_response(req_id, {
-                "content": [{"type": "text", "text": "Error: No index found. Run 'cortexcode index' first."}],
-                "isError": True,
-            })
+        is_workspace_tool = tool_name.startswith("cortexcode_workspace_")
+        if not is_workspace_tool:
+            self._reload_index()
+            if not self.index:
+                return create_mcp_response(req_id, {
+                    "content": [{"type": "text", "text": "Error: No index found. Run 'cortexcode index' first."}],
+                    "isError": True,
+                })
 
         handler_name = TOOL_HANDLERS.get(tool_name)
         if not handler_name:
@@ -243,3 +244,57 @@ class MCPToolHandlersMixin:
         """Generate API documentation."""
         from cortexcode.advanced_analysis import generate_api_docs
         return generate_api_docs(self.index, self._project_root())
+
+    # ── Workspace tools ────────────────────────────────────────────────────
+
+    def _discover_workspace(self):
+        """Find a workspace starting from the index's project root, falling back to CWD."""
+        from pathlib import Path
+        from cortexcode.workspace import Workspace
+
+        try:
+            start = Path(self._project_root()).resolve()
+        except Exception:
+            start = Path.cwd()
+        ws = Workspace.discover(start) or Workspace.discover()
+        return ws
+
+    def _tool_workspace_repos(self, args: dict) -> dict:
+        ws = self._discover_workspace()
+        if not ws:
+            return {"error": "No workspace found. Run `cortexcode workspace init` in the workspace root."}
+        return {"workspace": ws.name, "repos": ws.list_repos()}
+
+    def _tool_workspace_search(self, args: dict) -> dict:
+        ws = self._discover_workspace()
+        if not ws:
+            return {"error": "No workspace found."}
+        query = args.get("query", "")
+        limit = args.get("limit", 20)
+        if not query:
+            return {"error": "query is required"}
+        return {"workspace": ws.name, "query": query, "results": ws.search_across_repos(query, limit)}
+
+    def _tool_workspace_impact(self, args: dict) -> dict:
+        ws = self._discover_workspace()
+        if not ws:
+            return {"error": "No workspace found."}
+        ref = args.get("ref", "")
+        if not ref:
+            return {"error": "ref is required (e.g. 'backend:getUser' or 'shared/src/types.ts')"}
+        return ws.impact(ref)
+
+    def _tool_workspace_deps(self, args: dict) -> dict:
+        ws = self._discover_workspace()
+        if not ws:
+            return {"error": "No workspace found."}
+        return ws.cross_repo_deps()
+
+    def _tool_workspace_linkage(self, args: dict) -> dict:
+        ws = self._discover_workspace()
+        if not ws:
+            return {"error": "No workspace found."}
+        linkage = ws.load_linkage()
+        if not linkage:
+            return {"error": "No linkage cache. Run `cortexcode workspace index` first."}
+        return linkage

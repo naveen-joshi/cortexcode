@@ -178,6 +178,116 @@ def test_unknown_tool_returns_error(server):
     assert "error" in resp
 
 
+# ── Workspace tools ───────────────────────────────────────────────────────────
+
+def _make_workspace_fixture(tmp_path):
+    """Build a small two-repo workspace + a per-repo index for the MCP server."""
+    import yaml
+
+    shared_index = {
+        "files": {
+            "src/api.ts": {
+                "symbols": [{"name": "getUser", "type": "function", "line": 1, "calls": []}],
+                "imports": [],
+            }
+        },
+        "call_graph": {},
+        "file_dependencies": {},
+    }
+    fe_index = {
+        "files": {
+            "src/page.tsx": {
+                "symbols": [{"name": "Page", "type": "function", "line": 1, "calls": ["getUser"]}],
+                "imports": ["getUser from @acme/shared"],
+            }
+        },
+        "call_graph": {"Page": ["getUser"]},
+        "file_dependencies": {},
+    }
+
+    shared = tmp_path / "shared"
+    shared.mkdir()
+    (shared / "package.json").write_text(json.dumps({"name": "@acme/shared"}))
+    (shared / ".cortexcode").mkdir()
+    (shared / ".cortexcode" / "index.json").write_text(json.dumps(shared_index))
+
+    fe = tmp_path / "fe"
+    fe.mkdir()
+    (fe / "package.json").write_text(json.dumps({
+        "name": "@acme/fe",
+        "dependencies": {"@acme/shared": "*"},
+    }))
+    (fe / ".cortexcode").mkdir()
+    (fe / ".cortexcode" / "index.json").write_text(json.dumps(fe_index))
+
+    (tmp_path / "cortexcode-workspace.yml").write_text(yaml.safe_dump({
+        "name": "acme",
+        "repos": [
+            {"id": "shared", "path": str(shared), "package": "@acme/shared"},
+            {"id": "fe", "path": str(fe), "package": "@acme/fe"},
+        ],
+    }))
+
+    # The MCP server's `index_path.parent.parent` is used as the discovery root,
+    # so put the per-repo index under tmp_path/.cortexcode/.
+    (tmp_path / ".cortexcode").mkdir()
+    (tmp_path / ".cortexcode" / "index.json").write_text(json.dumps(_INDEX))
+    return tmp_path / ".cortexcode" / "index.json"
+
+
+def test_workspace_repos_tool(tmp_path):
+    index_path = _make_workspace_fixture(tmp_path)
+    server = CortexCodeMCPServer(index_path)
+    result = _call_tool(server, "cortexcode_workspace_repos", {})
+    ids = {r["id"] for r in result["repos"]}
+    assert ids == {"shared", "fe"}
+
+
+def test_workspace_search_tool(tmp_path):
+    index_path = _make_workspace_fixture(tmp_path)
+    server = CortexCodeMCPServer(index_path)
+    result = _call_tool(server, "cortexcode_workspace_search", {"query": "getUser"})
+    repos = {r["repo"] for r in result["results"]}
+    assert "shared" in repos
+
+
+def test_workspace_deps_tool(tmp_path):
+    index_path = _make_workspace_fixture(tmp_path)
+    server = CortexCodeMCPServer(index_path)
+
+    from cortexcode.workspace import Workspace
+    ws = Workspace(tmp_path)
+    ws.load_config()
+    ws.build_linkage()
+
+    result = _call_tool(server, "cortexcode_workspace_deps", {})
+    assert "shared" in result["graph"]["fe"]
+
+
+def test_workspace_impact_tool(tmp_path):
+    index_path = _make_workspace_fixture(tmp_path)
+    server = CortexCodeMCPServer(index_path)
+    # Need linkage to discover consumers
+    from cortexcode.workspace import Workspace
+    ws = Workspace(tmp_path)
+    ws.load_config()
+    ws.build_linkage()
+
+    result = _call_tool(server, "cortexcode_workspace_impact", {"ref": "shared:getUser"})
+    assert result["consumers"] == ["fe"]
+
+
+def test_workspace_tool_when_no_workspace(tmp_path):
+    # Set up a server with a per-repo index but NO workspace config.
+    index_path = tmp_path / ".cortexcode" / "index.json"
+    index_path.parent.mkdir()
+    index_path.write_text(json.dumps(_INDEX))
+    server = CortexCodeMCPServer(index_path)
+
+    result = _call_tool(server, "cortexcode_workspace_repos", {})
+    assert "error" in result
+
+
 # ── No index ──────────────────────────────────────────────────────────────────
 
 def test_no_index_returns_error(tmp_path):

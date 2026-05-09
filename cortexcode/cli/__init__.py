@@ -22,8 +22,11 @@ from cortexcode.cli.cli_watch import handle_watch_command
 from cortexcode.cli.cli_wiki import handle_wiki_command
 from cortexcode.cli.cli_workspace import (
     handle_workspace_add,
+    handle_workspace_deps,
+    handle_workspace_impact,
     handle_workspace_index,
     handle_workspace_init,
+    handle_workspace_linkage,
     handle_workspace_list,
     handle_workspace_remove,
     handle_workspace_search,
@@ -54,8 +57,11 @@ __all__ = [
     "handle_watch_command",
     "handle_wiki_command",
     "handle_workspace_add",
+    "handle_workspace_deps",
+    "handle_workspace_impact",
     "handle_workspace_index",
     "handle_workspace_init",
+    "handle_workspace_linkage",
     "handle_workspace_list",
     "handle_workspace_remove",
     "handle_workspace_search",
