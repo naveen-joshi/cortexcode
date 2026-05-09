@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python -c \"import cortexcode.main; print\\('import OK'\\)\")",
+      "Bash(python3 -c \"import cortexcode.main; print\\('import OK'\\)\")",
+      "Bash(pip3 show *)",
+      "Bash(cortexcode --version)"
+    ]
+  }
+}

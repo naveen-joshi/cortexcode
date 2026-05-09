@@ -177,6 +177,53 @@ TOOL_DEFINITIONS = [
             "properties": {},
         },
     },
+    {
+        "name": "cortexcode_workspace_repos",
+        "description": "USE THIS when user asks about the multi-repo workspace, which repos are in the workspace, or wants to list workspace members. Returns id, path, package, and indexed status for each repo. Only available when a `cortexcode-workspace.yml` is present.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {},
+        },
+    },
+    {
+        "name": "cortexcode_workspace_search",
+        "description": "USE THIS to search a symbol or function across ALL repos in the workspace, not just one. Use when user asks 'find X in any repo' or 'search the whole workspace'. Returns matches grouped by repo.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "query": {"type": "string", "description": "Symbol name to search for"},
+                "limit": {"type": "integer", "description": "Max results across all repos (default 20)", "default": 20},
+            },
+            "required": ["query"],
+        },
+    },
+    {
+        "name": "cortexcode_workspace_impact",
+        "description": "USE THIS for CROSS-REPO change impact: 'if I change X in backend, what breaks in frontend/mobile?'. The ref is `<repo_id>:<symbol>` or `<repo_id>/<file>`. Returns local callers plus references in other repos that import this repo's package.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "ref": {"type": "string", "description": "`<repo_id>:<symbol>` or `<repo_id>/<file>` (e.g. 'backend:getUser', 'shared/src/types.ts')"},
+            },
+            "required": ["ref"],
+        },
+    },
+    {
+        "name": "cortexcode_workspace_deps",
+        "description": "USE THIS when user asks about cross-repo dependencies, the dep graph between repos, or 'which repo depends on which'. Returns the package-edge graph between workspace members.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {},
+        },
+    },
+    {
+        "name": "cortexcode_workspace_linkage",
+        "description": "USE THIS to inspect the cached cross-repo linkage (package edges, build time). Useful for diagnosing why an impact query did or didn't find consumers.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {},
+        },
+    },
 ]
 
 
@@ -198,6 +245,11 @@ TOOL_HANDLERS = {
     "cortexcode_circular_deps": "_tool_circular_deps",
     "cortexcode_endpoints": "_tool_endpoints",
     "cortexcode_api_docs": "_tool_api_docs",
+    "cortexcode_workspace_repos": "_tool_workspace_repos",
+    "cortexcode_workspace_search": "_tool_workspace_search",
+    "cortexcode_workspace_impact": "_tool_workspace_impact",
+    "cortexcode_workspace_deps": "_tool_workspace_deps",
+    "cortexcode_workspace_linkage": "_tool_workspace_linkage",
 }
 
 

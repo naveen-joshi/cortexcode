@@ -49,13 +49,15 @@ def detect_framework(name: str, node: Any, source: str) -> str | None:
     if "@Pipe" in source_str or "PipeTransform" in source_str:
         return "nestjs-pipe"
 
+    # FastAPI uses Python decorators (@app.get), Express uses method calls (app.get).
+    # Check FastAPI first so @app.get(...) is not misclassified as an Express route.
+    if "@app.get(" in source_str or "@app.post(" in source_str or "@router.get(" in source_str or "@router.post(" in source_str:
+        return "fastapi-endpoint"
+
     if "app.get(" in source_str or "app.post(" in source_str or "router.get(" in source_str or "router.post(" in source_str:
         return "express-route"
     if "app.use(" in source_str and "router" not in name:
         return "express-middleware"
-
-    if "@app.get(" in source_str or "@app.post(" in source_str or "@router.get(" in source_str or "@router.post(" in source_str:
-        return "fastapi-endpoint"
     if "Depends(" in source_str and ("async def" in source_str or "def " in source_str):
         return "fastapi-dependency"
 
